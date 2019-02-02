@@ -15,6 +15,7 @@
 module Line.Bot.Data
   ( ChatType(..)
   , Id(..)
+  , URL(..)
   , Message(..)
   , ReplyToken(..)
   , ReplyMessageBody(ReplyMessageBody)
@@ -26,12 +27,11 @@ where
 
 import           Data.Aeson
 import           Data.Aeson.Types
-import           Data.Char                      ( toLower )
-import           Data.Maybe                     ( fromJust )
+import           Data.Char        (toLower)
+import           Data.Maybe       (fromJust)
 import           Data.String
-import           Data.Text                     as T
-                                         hiding ( toLower )
-import           GHC.Generics            hiding ( to )
+import           Data.Text        as T hiding (toLower)
+import           GHC.Generics     hiding (to)
 import           Servant.API
 import           Text.Show
 
@@ -63,23 +63,29 @@ instance FromJSON (Id Group) where
 instance FromJSON (Id Room) where
   parseJSON = withText "Id Room" $ return . RoomId
 
+newtype URL = URL Text
+  deriving (Show, Eq, Generic)
+
+instance ToJSON URL
+instance FromJSON URL
+
 data Message =
-    Text     { text :: String
+    Text     { text :: Text
              }
-  | Sticker  { packageId :: String
-             , stickerId :: String
+  | Sticker  { packageId :: Text
+             , stickerId :: Text
              }
-  | Image    { originalContentUrl :: String
-             , previewImageUrl    :: String
+  | Image    { originalContentUrl :: URL
+             , previewImageUrl    :: URL
              }
-  | Video    { originalContentUrl :: String
-             , previewImageUrl    :: String
+  | Video    { originalContentUrl :: URL
+             , previewImageUrl    :: URL
              }
-  | Audio    { originalContentUrl :: String
+  | Audio    { originalContentUrl :: URL
              , duration           :: Int
              }
-  | Location { title     :: String
-             , address   :: String
+  | Location { title     :: Text
+             , address   :: Text
              , latitude  :: Double
              , longitude :: Double
              }
@@ -99,10 +105,10 @@ messageJSONOptions = defaultOptions
   }
 
 data Profile = Profile
-  { displayName   :: String
+  { displayName   :: Text
   , userId        :: Id User
-  , pictureUrl    :: String
-  , statusMessage :: Maybe String
+  , pictureUrl    :: URL
+  , statusMessage :: Maybe Text
   }
   deriving (Show, Generic)
 

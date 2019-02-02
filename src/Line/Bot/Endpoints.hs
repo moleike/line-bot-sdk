@@ -10,7 +10,7 @@
 
 module Line.Bot.Endpoints where
 
-import           Data.ByteString.Lazy           ( ByteString )
+import           Data.ByteString.Lazy (ByteString)
 import           Line.Bot.Data
 import           Servant.API
 import           Servant.Client

@@ -1,5 +1,6 @@
 module Line.Bot
-       ( module Data
+       ( module Bot
        ) where
 
-import Line.Bot.Data as Data
+import Line.Bot.Client as Bot
+import Line.Bot.Data as Bot

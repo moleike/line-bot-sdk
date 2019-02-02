@@ -1,38 +1,42 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
+{-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE FlexibleContexts          #-}
 
 module Line.Bot.Webhook.Data
   ( Events(..)
   , Event(..)
   , Message(..)
-  , Timestamp(..)
+  , EpochMilli(..)
   , Source(..)
   , Members(..)
+  , PostbackEvent(..)
   )
 where
 
 import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.Char
-import           Data.List
+import           Data.Foldable
+import           Data.List             as L (stripPrefix)
 import           Data.Maybe
 import           Data.Scientific
-import qualified Data.Text                     as T
-                                         hiding ( toLower )
-import           Data.Time                      ( UTCTime )
+import           Data.Text             as T hiding (stripPrefix, toLower)
+import           Data.Time             (UTCTime)
+import           Data.Time.Calendar
+import           Data.Time.Clock
 import           Data.Time.Clock.POSIX
 import           Data.Time.Format
-import           Data.Typeable                  ( Typeable )
-import           GHC.Generics                   ( Generic )
-import           Line.Bot.Data           hiding ( Message )
+import           Data.Time.LocalTime
+import           Data.Typeable         (Typeable)
+import           GHC.Generics          (Generic)
+import           Line.Bot.Data         hiding (Message, Text)
 
 
 data Events =
@@ -47,30 +51,34 @@ data Event =
     Message      { replyToken :: ReplyToken
                  , message    :: Message
                  , source     :: Source
-                 , timestamp  :: Timestamp
+                 , timestamp  :: EpochMilli
                  }
   | Follow       { replyToken :: ReplyToken
                  , source     :: Source
-                 , timestamp  :: Timestamp
+                 , timestamp  :: EpochMilli
                  }
   | Unfollow     { source    :: Source
-                 , timestamp :: Timestamp
+                 , timestamp :: EpochMilli
                  }
   | Join         { replyToken :: ReplyToken
                  , source     :: Source
-                 , timestamp  :: Timestamp
+                 , timestamp  :: EpochMilli
                  }
   | Leave        { source    :: Source
-                 , timestamp :: Timestamp
+                 , timestamp :: EpochMilli
                  }
   | MemberJoined { replyToken :: ReplyToken
                  , source     :: Source
-                 , timestamp  :: Timestamp
+                 , timestamp  :: EpochMilli
                  , joined     :: Members
                  }
   | MemberLeft   { source    :: Source
-                 , timestamp :: Timestamp
+                 , timestamp :: EpochMilli
                  , left      :: Members
+                 }
+  | Postback     { replyToken :: ReplyToken
+                 , source     :: Source
+                 , postback   :: PostbackEvent
                  }
   deriving (Eq, Show, Generic)
 
@@ -84,35 +92,33 @@ eventJSONOptions = defaultOptions
   }
 
 data Message =
-    Text     { messageId :: String
-             , text      :: String
+    Text     { messageId :: Text
+             , text      :: Text
              }
-  | Image    { messageId          :: String
-             , originalContentUrl :: Maybe String
-             , previewImageUrl    :: Maybe String
+  | Image    { messageId       :: Text
+             , contentProvider :: ContentProvider
              }
-  | Video    { messageId          :: String
-             , duration           :: Int
-             , originalContentUrl :: Maybe String
-             , previewImageUrl    :: Maybe String
+  | Video    { messageId       :: Text
+             , duration        :: Int
+             , contentProvider :: ContentProvider
              }
-  | Audio    { messageId          :: String
-             , duration           :: Int
-             , originalContentUrl :: Maybe String
+  | Audio    { messageId       :: Text
+             , duration        :: Int
+             , contentProvider :: ContentProvider
              }
-  | File     { messageId :: String
+  | File     { messageId :: Text
              , fileSize  :: Int
-             , fileName  :: String
+             , fileName  :: Text
              }
-  | Location { messageId :: String
-             , title     :: String
-             , address   :: String
+  | Location { messageId :: Text
+             , title     :: Text
+             , address   :: Text
              , latitude  :: Double
              , longitude :: Double
              }
-  | Sticker  { messageId :: String
-             , packageId :: String
-             , stickerId :: String
+  | Sticker  { messageId :: Text
+             , packageId :: Text
+             , stickerId :: Text
              }
   deriving (Eq, Show, Generic)
 
@@ -121,7 +127,7 @@ messageJSONOptions = defaultOptions
   { sumEncoding = TaggedObject { tagFieldName = "type" }
   , constructorTagModifier = fmap toLower
   , fieldLabelModifier = \orig ->
-      case stripPrefix "message" orig of
+      case L.stripPrefix "message" orig of
         Just s  -> fmap toLower s
         Nothing -> orig
   , omitNothingFields = True
@@ -130,16 +136,25 @@ messageJSONOptions = defaultOptions
 instance FromJSON Message where
   parseJSON = genericParseJSON messageJSONOptions
 
-newtype Timestamp = Timestamp {
-  fromMilliseconds :: UTCTime
-  -- ^ Acquire the underlying value.
-} deriving (Eq, Ord, Read, Show, Typeable, FormatTime)
 
-instance FromJSON Timestamp where
-  parseJSON = withScientific "Timestamp" $ \t ->
+data ContentProvider = ContentProvider
+  { originalContentUrl :: Maybe URL
+  , previewImageUrl    :: Maybe URL
+  }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON ContentProvider
+
+newtype EpochMilli = EpochMilli {
+  fromEpochMilli :: UTCTime
+  -- ^ Acquire the underlying value.
+} deriving (Eq, Ord, Read, Show, FormatTime)
+
+instance FromJSON EpochMilli where
+  parseJSON = withScientific "EpochMilli" $ \t ->
     pure $ millis t
     where
-      millis = Timestamp
+      millis = EpochMilli
              . posixSecondsToUTCTime
              . fromRational
              . toRational
@@ -167,4 +182,28 @@ data Members =
   deriving (Eq, Show, Generic)
 
 instance FromJSON Members
+
+data PostbackDateTime =
+    PostbackDay Day
+  | PostbackLocalTime LocalTime
+  | PostbackTimeOfDay TimeOfDay
+  deriving (Eq, Show)
+
+instance FromJSON PostbackDateTime where
+  parseJSON = withObject "PostbackDateTime" $ \o -> do
+    dateTime <- asum
+      [ PostbackDay       <$> o .: "date"
+      , PostbackLocalTime <$> o .: "datetime"
+      , PostbackTimeOfDay <$> o .: "time"
+      ]
+    return dateTime
+
+data PostbackEvent = PostbackEvent Text PostbackDateTime
+  deriving (Eq, Show)
+
+instance FromJSON PostbackEvent where
+  parseJSON = withObject "PostbackEvent" $ \o -> do
+    postbackData <- o .: "data"
+    params       <- o .: "params"
+    return $ PostbackEvent postbackData params
 

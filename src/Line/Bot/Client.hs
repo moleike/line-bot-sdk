@@ -23,37 +23,26 @@ module Line.Bot.Client
   )
 where
 
-import           Control.Monad.Reader           ( ReaderT
-                                                , ask
-                                                , runReaderT
-                                                )
-import           Control.Monad.Trans            ( lift )
-import           Data.ByteString.Lazy           ( ByteString )
-import           Data.Monoid                    ( (<>) )
+import           Control.Monad.Reader                 (ReaderT, ask, runReaderT)
+import           Control.Monad.Trans                  (lift)
+import           Data.ByteString.Lazy                 (ByteString)
+import           Data.Monoid                          ((<>))
 import           Data.Proxy
 import           Data.String
-import           Data.Text                     as T
+import           Data.Text                            as T
 import           Line.Bot.Data
 import           Line.Bot.Endpoints
-import           Network.HTTP.Client            ( defaultManagerSettings
-                                                , newManager
-                                                )
-import           Servant.API             hiding ( addHeader )
+import           Network.HTTP.Client                  (defaultManagerSettings,
+                                                       newManager)
+import           Servant.API                          hiding (addHeader)
 import           Servant.Client
-import           Servant.Client.Core.Internal.Auth
-                                                ( AuthClientData
-                                                , AuthenticatedRequest
-                                                , mkAuthenticatedRequest
-                                                )
-import           Servant.Client.Core.Internal.Request
-                                                ( Request
-                                                , addHeader
-                                                )
-import           Servant.Server.Experimental.Auth
-                                                ( AuthHandler
-                                                , AuthServerData
-                                                , mkAuthHandler
-                                                )
+import           Servant.Client.Core.Internal.Auth    (AuthClientData,
+                                                       AuthenticatedRequest,
+                                                       mkAuthenticatedRequest)
+import           Servant.Client.Core.Internal.Request (Request, addHeader)
+import           Servant.Server.Experimental.Auth     (AuthHandler,
+                                                       AuthServerData,
+                                                       mkAuthHandler)
 
 
 --host :: BaseUrl

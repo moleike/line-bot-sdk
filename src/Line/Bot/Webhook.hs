@@ -4,4 +4,4 @@ module Line.Bot.Webhook
   )
 where
 
-import Line.Bot.Webhook.Data as Data
+import           Line.Bot.Webhook.Data as Data
