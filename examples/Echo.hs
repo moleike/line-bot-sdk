@@ -22,7 +22,7 @@ import           System.Environment         (getEnv)
 type WebM = ReaderT ChannelToken Handler
 
 type Webhook = "webhook" :> ReqBody '[JSON] Events
-  :> PostNoContent '[JSON] NoContent
+  :> Post '[JSON] NoContent
 
 echo :: Event -> Line NoContent
 echo Message { message = W.Text { text }, replyToken } =

@@ -87,7 +87,7 @@ instance FromJSON Event where
 eventJSONOptions :: Options
 eventJSONOptions = defaultOptions
   { sumEncoding            = TaggedObject {tagFieldName = "type"}
-  , constructorTagModifier = \(x : xs) -> (toLower x) : xs
+  , constructorTagModifier = \(x : xs) -> toLower x : xs
   }
 
 data Message =
