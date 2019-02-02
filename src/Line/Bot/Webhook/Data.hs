@@ -28,9 +28,8 @@ import           Data.List             as L (stripPrefix)
 import           Data.Maybe
 import           Data.Scientific
 import           Data.Text             as T hiding (stripPrefix, toLower)
-import           Data.Time             (UTCTime)
-import           Data.Time.Calendar
-import           Data.Time.Clock
+import           Data.Time             (LocalTime, UTCTime)
+import           Data.Time.Calendar    (Day)
 import           Data.Time.Clock.POSIX
 import           Data.Time.Format
 import           Data.Time.LocalTime

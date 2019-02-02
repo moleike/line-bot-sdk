@@ -5,10 +5,10 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeOperators     #-}
 
-module Main where
+module Main (main) where
 
 import           Control.Monad              (mapM_)
-import           Control.Monad.Trans        (liftIO)
+import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
 import           Data.String                (fromString)
 import           Line.Bot                   as B

@@ -23,8 +23,8 @@ module Line.Bot.Client
   )
 where
 
-import           Control.Monad.Reader                 (ReaderT, ask, runReaderT)
-import           Control.Monad.Trans                  (lift)
+import           Control.Monad.Trans.Class            (lift)
+import           Control.Monad.Trans.Reader           (ReaderT, ask, runReaderT)
 import           Data.ByteString.Lazy                 (ByteString)
 import           Data.Monoid                          ((<>))
 import           Data.Proxy
