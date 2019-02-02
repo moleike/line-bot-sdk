@@ -98,8 +98,15 @@ multicastMessage' :: Auth -> MulticastMessageBody -> ClientM NoContent
 
 getContent' :: Auth -> String -> ClientM ByteString
 
-getProfile' :<|> getGroupMemberProfile' :<|> leaveGroup' :<|> getRoomMemberProfile' :<|> leaveRoom' :<|> replyMessage' :<|> pushMessage' :<|> multicastMessage' :<|> getContent'
-  = client (Proxy :: Proxy Endpoints)
+getProfile'
+  :<|> getGroupMemberProfile'
+  :<|> leaveGroup'
+  :<|> getRoomMemberProfile'
+  :<|> leaveRoom'
+  :<|> replyMessage'
+  :<|> pushMessage'
+  :<|> multicastMessage'
+  :<|> getContent' = client (Proxy :: Proxy Endpoints)
 
 getProfile :: Id User -> Line Profile
 getProfile a = ask >>= \token -> lift $ getProfile' (mkAuth token) a
@@ -130,17 +137,3 @@ multicastMessage :: [Id User] -> [Message] -> Line NoContent
 multicastMessage a ms = ask
   >>= \token -> lift $ multicastMessage' (mkAuth token) body
   where body = MulticastMessageBody a ms
-
-run :: IO ()
-run = do
-  --token <- fmap fromString <$> lookupEnv "CHANNEL_TOKEN"
-  token    <- pure "foo"
-  user     <- pure (GroupId "foo")
-  messages <- pure [Text "foo"]
-  res      <- runLine  token (pushMessage user messages)
-  case res of
-    Left  err     -> putStrLn $ "Error: " ++ show err
-    Right profile -> do
-      print profile
-
-
