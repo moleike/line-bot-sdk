@@ -16,13 +16,11 @@ import           Line.Bot.Client
 import           Line.Bot.Webhook           as W
 import           Network.Wai.Handler.Warp   (run)
 import           Servant
+import           Servant.Server             (Context ((:.), EmptyContext))
 import           System.Environment         (getEnv)
 
 
 type WebM = ReaderT ChannelToken Handler
-
-type Webhook = "webhook" :> ReqBody '[JSON] Events
-  :> Post '[JSON] NoContent
 
 echo :: Event -> Line NoContent
 echo Message { message = W.Text { text }, replyToken } =
@@ -41,13 +39,16 @@ echoServer = handleEvents
 webhook :: Proxy Webhook
 webhook = Proxy
 
-app :: ChannelToken -> Application
-app token = serve webhook server
+app :: ChannelToken -> ChannelSecret -> Application
+app token secret = serveWithContext webhook context server
   where
-    server = hoistServer webhook nt echoServer
-    nt     = flip runReaderT token
+    server  = hoistServerWithContext webhook pc nt echoServer
+    nt      = flip runReaderT token
+    pc      = Proxy :: Proxy '[ChannelSecret]
+    context = secret :. EmptyContext
 
 main :: IO ()
 main = do
-  token <- fromString <$> getEnv "CHANNEL_TOKEN"
-  run 8080 $ app token
+  token  <- fromString <$> getEnv "CHANNEL_TOKEN"
+  secret <- fromString <$> getEnv "CHANNEL_SECRET"
+  run 8080 $ app token secret

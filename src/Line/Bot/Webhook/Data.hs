@@ -10,7 +10,8 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 
 module Line.Bot.Webhook.Data
-  ( Events(..)
+  ( ChannelSecret(..)
+  , Events(..)
   , Event(..)
   , Message(..)
   , EpochMilli(..)
@@ -22,11 +23,13 @@ where
 
 import           Data.Aeson
 import           Data.Aeson.Types
+import qualified Data.ByteString.Char8 as B
 import           Data.Char
 import           Data.Foldable
 import           Data.List             as L (stripPrefix)
 import           Data.Maybe
 import           Data.Scientific
+import           Data.String
 import           Data.Text             as T hiding (stripPrefix, toLower)
 import           Data.Time             (LocalTime, UTCTime)
 import           Data.Time.Calendar    (Day)
@@ -37,6 +40,11 @@ import           Data.Typeable         (Typeable)
 import           GHC.Generics          (Generic)
 import           Line.Bot.Data         hiding (Message, Text)
 
+
+newtype ChannelSecret = ChannelSecret { unChannelSecret :: B.ByteString }
+
+instance IsString ChannelSecret where
+  fromString s = ChannelSecret (B.pack s)
 
 data Events =
   Events { destination :: Id User
