@@ -51,4 +51,5 @@ main :: IO ()
 main = do
   token  <- fromString <$> getEnv "CHANNEL_TOKEN"
   secret <- fromString <$> getEnv "CHANNEL_SECRET"
-  run 8080 $ app token secret
+  port   <- read       <$> getEnv "PORT"
+  run port $ app token secret
