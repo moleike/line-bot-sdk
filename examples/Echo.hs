@@ -22,6 +22,8 @@ import           System.Environment         (getEnv)
 
 type WebM = ReaderT ChannelToken Handler
 
+type API = "webhook" :> Webhook
+
 echo :: Event -> Line NoContent
 echo Message { message = W.Text { text }, replyToken } =
   replyMessage replyToken [B.Text text]
@@ -33,10 +35,10 @@ handleEvents Events { events } = do
   _     <- liftIO $ mapM_ (\ev -> runLine token $ echo ev) events
   return NoContent
 
-echoServer :: ServerT Webhook WebM
+echoServer :: ServerT API WebM
 echoServer = handleEvents
 
-webhook :: Proxy Webhook
+webhook :: Proxy API
 webhook = Proxy
 
 app :: ChannelToken -> ChannelSecret -> Application
