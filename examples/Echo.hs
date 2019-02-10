@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -7,18 +6,18 @@
 
 module Main (main) where
 
-import           Control.Monad              (mapM_)
-import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
-import           Data.String                (fromString)
-import           Line.Bot                   as B
-import           Line.Bot.Client
-import           Line.Bot.Webhook           as W
-import           Network.Wai.Handler.Warp   (run)
+import           Control.Monad                        (mapM_)
+import           Control.Monad.IO.Class               (liftIO)
+import           Control.Monad.Trans.Reader           (ReaderT, ask, runReaderT)
+import           Data.String                          (fromString)
+import           Line.Bot                             as B
+import           Line.Bot.Client                      (Line, replyMessage)
+import           Line.Bot.Webhook                     as W
+import           Network.Wai.Handler.Warp             (run)
+import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           Servant
-import           Servant.Server             (Context ((:.), EmptyContext))
-import           System.Environment         (getEnv)
-
+import           Servant.Server                       (Context ((:.), EmptyContext))
+import           System.Environment                   (getEnv)
 
 type WebM = ReaderT ChannelToken Handler
 
@@ -32,19 +31,17 @@ echo _ = return NoContent
 handleEvents :: Events -> WebM NoContent
 handleEvents Events { events } = do
   token <- ask
-  _     <- liftIO $ mapM_ (\ev -> runLine token $ echo ev) events
+  _     <- liftIO $ mapM_ (runLine token . echo) events
   return NoContent
 
 echoServer :: ServerT API WebM
 echoServer = handleEvents
 
-webhook :: Proxy API
-webhook = Proxy
-
 app :: ChannelToken -> ChannelSecret -> Application
-app token secret = serveWithContext webhook context server
+app token secret = serveWithContext api context server
   where
-    server  = hoistServerWithContext webhook pc nt echoServer
+    api     = Proxy :: Proxy API
+    server  = hoistServerWithContext api pc nt echoServer
     nt      = flip runReaderT token
     pc      = Proxy :: Proxy '[ChannelSecret]
     context = secret :. EmptyContext
@@ -54,4 +51,4 @@ main = do
   token  <- fromString <$> getEnv "CHANNEL_TOKEN"
   secret <- fromString <$> getEnv "CHANNEL_SECRET"
   port   <- read       <$> getEnv "PORT"
-  run port $ app token secret
+  run port $ logStdout $ app token secret
