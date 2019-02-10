@@ -32,8 +32,8 @@ import           Data.String
 import           Data.Text                            as T
 import           Line.Bot.Data
 import           Line.Bot.Endpoints
-import           Network.HTTP.Client                  (defaultManagerSettings,
-                                                       newManager)
+import           Network.HTTP.Client                  (newManager)
+import           Network.HTTP.Client.TLS              (tlsManagerSettings)
 import           Servant.API                          hiding (addHeader)
 import           Servant.Client
 import           Servant.Client.Core.Internal.Auth    (AuthClientData,
@@ -45,11 +45,8 @@ import           Servant.Server.Experimental.Auth     (AuthHandler,
                                                        mkAuthHandler)
 
 
---host :: BaseUrl
---host = BaseUrl Https "api.line.me" 443 ""
-
 host :: BaseUrl
-host = BaseUrl Http "localhost" 8081 ""
+host = BaseUrl Https "api.line.me" 443 ""
 
 newtype ChannelToken = ChannelToken Text
   deriving (Eq)
@@ -68,7 +65,7 @@ type instance AuthClientData (AuthProtect ChannelAuth) = ChannelToken
 
 runLine' :: ClientM a -> IO (Either ServantError a)
 runLine' comp = do
-  manager <- newManager defaultManagerSettings
+  manager <- newManager tlsManagerSettings
   runClientM comp (mkClientEnv manager host)
 
 runLine :: ChannelToken -> Line a -> IO (Either ServantError a)
