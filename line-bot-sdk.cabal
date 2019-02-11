@@ -15,8 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Line.Bot
-                     , Line.Bot.Webhook
+  exposed-modules:     Line.Bot.Webhook
                      , Line.Bot.Client
                      , Line.Bot.Data
                      , Line.Bot.Endpoints

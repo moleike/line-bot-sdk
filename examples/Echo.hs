@@ -10,8 +10,7 @@ import           Control.Monad                        (mapM_)
 import           Control.Monad.IO.Class               (liftIO)
 import           Control.Monad.Trans.Reader           (ReaderT, ask, runReaderT)
 import           Data.String                          (fromString)
-import           Line.Bot                             as B
-import           Line.Bot.Client                      (Line, replyMessage)
+import           Line.Bot.Client                      as B
 import           Line.Bot.Webhook                     as W
 import           Network.Wai.Handler.Warp             (run)
 import           Network.Wai.Middleware.RequestLogger (logStdout)

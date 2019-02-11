@@ -9,7 +9,8 @@
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Line.Bot.Client
-  ( runLine
+  ( module Data
+  , runLine
   , Line
   , ChannelToken(..)
   , getProfile
@@ -30,7 +31,7 @@ import           Data.Monoid                          ((<>))
 import           Data.Proxy
 import           Data.String
 import           Data.Text                            as T
-import           Line.Bot.Data
+import           Line.Bot.Data                        as Data
 import           Line.Bot.Endpoints
 import           Network.HTTP.Client                  (newManager)
 import           Network.HTTP.Client.TLS              (tlsManagerSettings)
