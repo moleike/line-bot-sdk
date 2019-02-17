@@ -22,15 +22,19 @@ module Line.Bot.Data
   , PushMessageBody(PushMessageBody)
   , MulticastMessageBody(MulticastMessageBody)
   , Profile(..)
+  , QuickReply(..)
+  , QuickReplyButton(..)
+  , Action(..)
   )
 where
 
 import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.Char        (toLower)
+import           Data.List        as L (stripPrefix)
 import           Data.Maybe       (fromJust)
 import           Data.String
-import           Data.Text        as T hiding (toLower)
+import           Data.Text        as T hiding (drop, toLower)
 import           GHC.Generics     hiding (to)
 import           Servant.API
 import           Text.Show
@@ -70,24 +74,30 @@ instance ToJSON URL
 instance FromJSON URL
 
 data Message =
-    Text     { text :: Text
+    Text     { text       :: Text
+             , quickReply :: Maybe QuickReply
              }
-  | Sticker  { packageId :: Text
-             , stickerId :: Text
+  | Sticker  { packageId  :: Text
+             , stickerId  :: Text
+             , quickReply :: Maybe QuickReply
              }
   | Image    { originalContentUrl :: URL
              , previewImageUrl    :: URL
+             , quickReply         :: Maybe QuickReply
              }
   | Video    { originalContentUrl :: URL
              , previewImageUrl    :: URL
+             , quickReply         :: Maybe QuickReply
              }
   | Audio    { originalContentUrl :: URL
              , duration           :: Int
+             , quickReply         :: Maybe QuickReply
              }
-  | Location { title     :: Text
-             , address   :: Text
-             , latitude  :: Double
-             , longitude :: Double
+  | Location { title      :: Text
+             , address    :: Text
+             , latitude   :: Double
+             , longitude  :: Double
+             , quickReply :: Maybe QuickReply
              }
   deriving (Eq, Show, Generic)
 
@@ -97,9 +107,9 @@ instance ToJSON Message where
 messageJSONOptions :: Options
 messageJSONOptions = defaultOptions
   { sumEncoding            = TaggedObject
-                               { tagFieldName      = "type"
-                               , contentsFieldName = undefined
-                               }
+    { tagFieldName      = "type"
+    , contentsFieldName = undefined
+    }
   , constructorTagModifier = fmap toLower
   , omitNothingFields      = True
   }
@@ -148,3 +158,66 @@ data MulticastMessageBody = MulticastMessageBody
   deriving (Show, Generic)
 
 instance ToJSON MulticastMessageBody
+
+data QuickReply = QuickReply
+  { items :: [QuickReplyButton] }
+  deriving (Eq, Show, Generic)
+
+instance ToJSON QuickReply
+
+data QuickReplyButton =
+    Action { imageUrl :: Maybe URL
+           , action   :: Action
+           }
+  deriving (Eq, Show, Generic)
+
+quickReplyButtonJSONOptions :: Options
+quickReplyButtonJSONOptions = defaultOptions
+  { sumEncoding            = TaggedObject
+    { tagFieldName      = "type"
+    , contentsFieldName = undefined
+    }
+  , constructorTagModifier = fmap toLower
+  , omitNothingFields      = True
+  , tagSingleConstructors  = True
+  }
+
+instance ToJSON QuickReplyButton where
+  toJSON = genericToJSON quickReplyButtonJSONOptions
+
+
+data Action =
+    ActionPostback   { label        :: Text
+                     , postbackData :: Text
+                     , displayText  :: Text
+                     }
+  | ActionMessage    { label :: Text
+                     , text  :: Text
+                     }
+  | ActionURI        { label :: Text
+                     , uri   :: Text
+                     }
+  | ActionCamera     { label :: Text
+                     }
+  | ActionCameraRoll { label :: Text
+                     }
+  | ActionLocation   { label :: Text
+                     }
+  deriving (Eq, Show, Generic)
+
+instance ToJSON Action where
+  toJSON = genericToJSON actionJSONOptions
+
+actionJSONOptions :: Options
+actionJSONOptions = defaultOptions
+  { sumEncoding            = TaggedObject
+    { tagFieldName      = "type"
+    , contentsFieldName = undefined
+    }
+  , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 6
+  , omitNothingFields      = True
+  , fieldLabelModifier     = \orig ->
+      case L.stripPrefix "postback" orig of
+        Just s  -> fmap toLower s
+        Nothing -> orig
+  }

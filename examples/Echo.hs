@@ -24,7 +24,7 @@ type API = "webhook" :> Webhook
 
 echo :: Event -> Line NoContent
 echo Message { message = W.Text { text }, replyToken } =
-  replyMessage replyToken [B.Text text]
+  replyMessage replyToken [B.Text text Nothing]
 echo _ = return NoContent
 
 handleEvents :: Events -> WebM NoContent
