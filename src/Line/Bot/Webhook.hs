@@ -15,7 +15,7 @@
 
 
 module Line.Bot.Webhook
-  ( module Data
+  ( module Line.Bot.Webhook.Types
   , Webhook
   , LineReqBody
   )
@@ -32,7 +32,7 @@ import           Data.Maybe               (fromMaybe)
 import           Data.Proxy
 import           Data.String.Conversions  (cs)
 import           Data.Typeable            (Typeable)
-import           Line.Bot.Webhook.Data    as Data
+import           Line.Bot.Webhook.Types
 import           Network.HTTP.Types       (HeaderName, hContentType)
 import           Network.Wai              (Request, lazyRequestBody,
                                            requestHeaders)

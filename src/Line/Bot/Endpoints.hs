@@ -11,7 +11,7 @@
 module Line.Bot.Endpoints where
 
 import           Data.ByteString.Lazy (ByteString)
-import           Line.Bot.Data
+import           Line.Bot.Types
 import           Servant.API
 import           Servant.Client
 

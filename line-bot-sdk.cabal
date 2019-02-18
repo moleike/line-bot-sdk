@@ -29,9 +29,10 @@ library
   hs-source-dirs:      src
   exposed-modules:     Line.Bot.Webhook
                      , Line.Bot.Client
-                     , Line.Bot.Data
-                     , Line.Bot.Endpoints
-                     , Line.Bot.Webhook.Data
+
+  other-modules:       Line.Bot.Endpoints
+                     , Line.Bot.Types
+                     , Line.Bot.Webhook.Types
 
   build-depends:       base                 >= 4.7 && < 5
                      , aeson                >= 1.4.2 && < 1.5

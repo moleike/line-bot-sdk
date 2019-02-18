@@ -9,7 +9,7 @@
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 
-module Line.Bot.Webhook.Data
+module Line.Bot.Webhook.Types
   ( ChannelSecret(..)
   , Events(..)
   , Event(..)
@@ -38,7 +38,7 @@ import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Data.Typeable         (Typeable)
 import           GHC.Generics          (Generic)
-import           Line.Bot.Data         hiding (Message, Text)
+import           Line.Bot.Types        hiding (Message, Text)
 
 
 newtype ChannelSecret = ChannelSecret { unChannelSecret :: B.ByteString }

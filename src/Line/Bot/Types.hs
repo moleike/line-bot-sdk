@@ -12,7 +12,7 @@
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE StandaloneDeriving        #-}
 
-module Line.Bot.Data
+module Line.Bot.Types
   ( ChatType(..)
   , Id(..)
   , URL(..)
