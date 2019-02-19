@@ -17,7 +17,8 @@ module Line.Bot.Webhook.Types
   , EpochMilli(..)
   , Source(..)
   , Members(..)
-  , PostbackEvent(..)
+  , Postback(..)
+  , Link(..)
   )
 where
 
@@ -30,7 +31,7 @@ import           Data.List             as L (stripPrefix)
 import           Data.Maybe
 import           Data.Scientific
 import           Data.String
-import           Data.Text             as T hiding (stripPrefix, toLower)
+import           Data.Text             as T hiding (drop, stripPrefix, toLower)
 import           Data.Time             (LocalTime, UTCTime)
 import           Data.Time.Calendar    (Day)
 import           Data.Time.Clock.POSIX
@@ -41,52 +42,59 @@ import           GHC.Generics          (Generic)
 import           Line.Bot.Types        hiding (Message, Text)
 
 
-newtype ChannelSecret = ChannelSecret { unChannelSecret :: B.ByteString }
+newtype ChannelSecret = ChannelSecret
+  { unChannelSecret :: B.ByteString }
 
 instance IsString ChannelSecret where
   fromString s = ChannelSecret (B.pack s)
 
-data Events =
-  Events { destination :: Id User
-         , events      :: [Event]
-         }
+data Events = Events
+  { destination :: Id User
+  , events      :: [Event]
+  }
   deriving (Eq, Show, Generic)
 
 instance FromJSON Events
 
 data Event =
-    Message      { replyToken :: ReplyToken
-                 , message    :: Message
-                 , source     :: Source
-                 , timestamp  :: EpochMilli
-                 }
-  | Follow       { replyToken :: ReplyToken
-                 , source     :: Source
-                 , timestamp  :: EpochMilli
-                 }
-  | Unfollow     { source    :: Source
-                 , timestamp :: EpochMilli
-                 }
-  | Join         { replyToken :: ReplyToken
-                 , source     :: Source
-                 , timestamp  :: EpochMilli
-                 }
-  | Leave        { source    :: Source
-                 , timestamp :: EpochMilli
-                 }
-  | MemberJoined { replyToken :: ReplyToken
-                 , source     :: Source
-                 , timestamp  :: EpochMilli
-                 , joined     :: Members
-                 }
-  | MemberLeft   { source    :: Source
-                 , timestamp :: EpochMilli
-                 , left      :: Members
-                 }
-  | Postback     { replyToken :: ReplyToken
-                 , source     :: Source
-                 , postback   :: PostbackEvent
-                 }
+    EventMessage      { replyToken :: ReplyToken
+                      , message    :: Message
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      }
+  | EventFollow       { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      }
+  | EventUnfollow     { source    :: Source
+                      , timestamp :: EpochMilli
+                      }
+  | EventJoin         { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      }
+  | EventLeave        { source    :: Source
+                      , timestamp :: EpochMilli
+                      }
+  | EventMemberJoined { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      , joined     :: Members
+                      }
+  | EventMemberLeft   { source    :: Source
+                      , timestamp :: EpochMilli
+                      , left      :: Members
+                      }
+  | EventPostback     { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      , postback   :: Postback
+                      }
+  | EventAccountLink  { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      , link       :: Link
+                      }
   deriving (Eq, Show, Generic)
 
 instance FromJSON Event where
@@ -94,8 +102,11 @@ instance FromJSON Event where
 
 eventJSONOptions :: Options
 eventJSONOptions = defaultOptions
-  { sumEncoding            = TaggedObject {tagFieldName = "type"}
-  , constructorTagModifier = \(x : xs) -> toLower x : xs
+  { sumEncoding            = TaggedObject
+    { tagFieldName      = "type"
+    , contentsFieldName = undefined
+    }
+  , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 5
   }
 
 data Message =
@@ -131,9 +142,12 @@ data Message =
 
 messageJSONOptions :: Options
 messageJSONOptions = defaultOptions
-  { sumEncoding = TaggedObject { tagFieldName = "type" }
+  { sumEncoding            = TaggedObject
+    { tagFieldName      = "type"
+    , contentsFieldName = undefined
+    }
   , constructorTagModifier = fmap toLower
-  , fieldLabelModifier = \orig ->
+  , fieldLabelModifier     = \orig ->
       case L.stripPrefix "message" orig of
         Just s  -> fmap toLower s
         Nothing -> orig
@@ -184,8 +198,7 @@ instance FromJSON Source where
       _       -> fail ("unknown source: " ++ messageType)
 
 
-data Members =
-  Members { members :: [Source] }
+data Members = Members { members :: [Source] }
   deriving (Eq, Show, Generic)
 
 instance FromJSON Members
@@ -205,12 +218,19 @@ instance FromJSON PostbackDateTime where
       ]
     return dateTime
 
-data PostbackEvent = PostbackEvent Text PostbackDateTime
+data Postback = Postback Text PostbackDateTime
   deriving (Eq, Show)
 
-instance FromJSON PostbackEvent where
-  parseJSON = withObject "PostbackEvent" $ \o -> do
+instance FromJSON Postback where
+  parseJSON = withObject "Postback" $ \o -> do
     postbackData <- o .: "data"
     params       <- o .: "params"
-    return $ PostbackEvent postbackData params
+    return $ Postback postbackData params
 
+data Link = Link
+  { nonce  :: Text
+  , result :: Text
+  }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON Link

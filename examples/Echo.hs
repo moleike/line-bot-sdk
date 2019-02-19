@@ -23,7 +23,7 @@ type WebM = ReaderT ChannelToken Handler
 type API = "webhook" :> Webhook
 
 echo :: Event -> Line NoContent
-echo Message { message = W.Text { text }, replyToken } =
+echo EventMessage { message = W.Text { text }, replyToken } =
   replyMessage replyToken [B.Text text Nothing]
 echo _ = return NoContent
 
