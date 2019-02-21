@@ -18,7 +18,12 @@ module Line.Bot.Webhook.Types
   , Source(..)
   , Members(..)
   , Postback(..)
-  , Link(..)
+  , Beacon(..)
+  , BeaconEvent(..)
+  , Things(..)
+  , ThingsEvent(..)
+  , AccountLink(..)
+  , AccountLinkResult(..)
   )
 where
 
@@ -90,24 +95,31 @@ data Event =
                       , timestamp  :: EpochMilli
                       , postback   :: Postback
                       }
+  | EventBeacon       { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      , beacon     :: Beacon
+                      }
   | EventAccountLink  { replyToken :: ReplyToken
                       , source     :: Source
                       , timestamp  :: EpochMilli
-                      , link       :: Link
+                      , link       :: AccountLink
+                      }
+  | EventThings       { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      , things     :: Things
                       }
   deriving (Eq, Show, Generic)
 
 instance FromJSON Event where
-  parseJSON = genericParseJSON eventJSONOptions
-
-eventJSONOptions :: Options
-eventJSONOptions = defaultOptions
-  { sumEncoding            = TaggedObject
-    { tagFieldName      = "type"
-    , contentsFieldName = undefined
-    }
-  , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 5
-  }
+  parseJSON = genericParseJSON $
+    defaultOptions { sumEncoding            = TaggedObject
+                     { tagFieldName      = "type"
+                     , contentsFieldName = undefined
+                     }
+                   , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 5
+                   }
 
 data Message =
     Text     { messageId :: Text
@@ -227,10 +239,63 @@ instance FromJSON Postback where
     params       <- o .: "params"
     return $ Postback postbackData params
 
-data Link = Link
-  { nonce  :: Text
-  , result :: Text
-  }
-  deriving (Eq, Show, Generic)
+data BeaconEvent = Enter | Leave | Banner
+  deriving (Show, Read, Eq, Ord, Generic)
 
-instance FromJSON Link
+instance FromJSON BeaconEvent where
+  parseJSON = genericParseJSON $
+    defaultOptions { constructorTagModifier = fmap toLower
+                   , allNullaryToStringTag  = True
+                   }
+
+data Beacon = Beacon
+   { hwid      :: Text
+   , eventType :: BeaconEvent
+   , dm        :: Maybe Text
+   }
+   deriving (Eq, Show, Generic)
+
+instance FromJSON Beacon where
+  parseJSON = withObject "Beacon" $ \o -> do
+    hwid      <- o .:  "hwid"
+    eventType <- o .:  "type"
+    dm        <- o .:? "dm"
+    return $ Beacon{..}
+
+data AccountLinkResult = Ok | Failed
+ deriving (Eq, Show, Generic)
+
+instance FromJSON AccountLinkResult where
+  parseJSON = genericParseJSON $
+    defaultOptions { constructorTagModifier = fmap toLower
+                   , allNullaryToStringTag  = True
+                   }
+
+data AccountLink = AccountLink
+   { nonce  :: Text
+   , result :: AccountLinkResult
+   }
+   deriving (Eq, Show, Generic)
+
+instance FromJSON AccountLink
+
+data ThingsEvent = Link | Unlink
+  deriving (Show, Read, Eq, Ord, Generic)
+
+instance FromJSON ThingsEvent where
+  parseJSON = genericParseJSON $
+    defaultOptions { constructorTagModifier = fmap toLower
+                   , allNullaryToStringTag  = True
+                   }
+
+data Things = Things
+   { deviceId  :: Text
+   , eventType :: ThingsEvent
+   }
+   deriving (Eq, Show, Generic)
+
+instance FromJSON Things where
+  parseJSON = withObject "Things" $ \o -> do
+    deviceId  <- o .: "deviceId"
+    eventType <- o .: "type"
+    return $ Things{..}
