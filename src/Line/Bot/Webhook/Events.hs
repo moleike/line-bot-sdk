@@ -8,10 +8,15 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+-- |
+-- Module      : Line.Bot.Webhook.Events
+-- Copyright   : (c) Alexandre Moreno, 2019
+-- License     : BSD3
+-- Maintainer  : alexmorenocano@gmail.com
+-- Stability   : experimental
 
-module Line.Bot.Webhook.Types
-  ( ChannelSecret(..)
-  , Events(..)
+module Line.Bot.Webhook.Events
+  ( Events(..)
   , Event(..)
   , Message(..)
   , EpochMilli(..)
@@ -29,7 +34,6 @@ where
 
 import           Data.Aeson
 import           Data.Aeson.Types
-import qualified Data.ByteString.Char8 as B
 import           Data.Char
 import           Data.Foldable
 import           Data.List             as L (stripPrefix)
@@ -46,12 +50,6 @@ import           Data.Typeable         (Typeable)
 import           GHC.Generics          (Generic)
 import           Line.Bot.Types        hiding (Message, Text)
 
-
-newtype ChannelSecret = ChannelSecret
-  { unChannelSecret :: B.ByteString }
-
-instance IsString ChannelSecret where
-  fromString s = ChannelSecret (B.pack s)
 
 data Events = Events
   { destination :: Id User

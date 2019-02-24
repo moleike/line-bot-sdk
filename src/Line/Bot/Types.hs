@@ -11,13 +11,22 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE StandaloneDeriving        #-}
+-- |
+-- Module      : Line.Bot.Types
+-- Copyright   : (c) Alexandre Moreno, 2019
+-- License     : BSD3
+-- Maintainer  : alexmorenocano@gmail.com
+-- Stability   : experimental
 
 module Line.Bot.Types
-  ( ChatType(..)
+  ( ChannelToken(..)
+  , ChannelSecret(..)
+  , ChatType(..)
   , Id(..)
   , URL(..)
   , Message(..)
   , ReplyToken(..)
+  , LinkToken(..)
   , ReplyMessageBody(ReplyMessageBody)
   , PushMessageBody(PushMessageBody)
   , MulticastMessageBody(MulticastMessageBody)
@@ -30,17 +39,34 @@ where
 
 import           Data.Aeson
 import           Data.Aeson.Types
-import           Data.Char        (toLower)
-import           Data.List        as L (stripPrefix)
-import           Data.Maybe       (fromJust)
+import qualified Data.ByteString.Char8 as B
+import           Data.Char             (toLower)
+import           Data.List             as L (stripPrefix)
+import           Data.Maybe            (fromJust)
 import           Data.String
-import           Data.Text        as T hiding (drop, toLower)
-import           GHC.Generics     hiding (to)
+import           Data.Text             as T hiding (drop, toLower)
+import           GHC.Generics          hiding (to)
 import           Servant.API
 import           Text.Show
 
+newtype ChannelToken = ChannelToken Text
+  deriving (Eq)
+
+instance IsString ChannelToken where
+  fromString s = ChannelToken (fromString s)
+
+instance ToHttpApiData ChannelToken where
+  toQueryParam (ChannelToken t) = "Bearer " <> t
+
+newtype ChannelSecret = ChannelSecret
+  { unChannelSecret :: B.ByteString }
+
+instance IsString ChannelSecret where
+  fromString s = ChannelSecret (B.pack s)
+
 data ChatType = User | Group | Room
 
+-- | ID of a chat user, group or room
 data Id :: ChatType -> * where
   UserId  :: Text -> Id User
   GroupId :: Text -> Id Group
@@ -129,6 +155,11 @@ newtype ReplyToken = ReplyToken Text
 
 instance ToJSON ReplyToken
 instance FromJSON ReplyToken
+
+data LinkToken = LinkToken { linkToken :: Text }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON LinkToken
 
 data ReplyMessageBody = ReplyMessageBody
   { replyToken :: ReplyToken

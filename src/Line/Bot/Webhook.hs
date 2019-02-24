@@ -12,14 +12,19 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
+-- |
+-- Module      : Line.Bot.Webhook
+-- Copyright   : (c) Alexandre Moreno, 2019
+-- License     : BSD3
+-- Maintainer  : alexmorenocano@gmail.com
+-- Stability   : experimental
 
 module Line.Bot.Webhook
-  ( module Line.Bot.Webhook.Types
-  , Webhook
+  ( Webhook
   , LineReqBody
+  , module Events
   )
-  where
+where
 
 import           Control.Monad.IO.Class   (liftIO)
 import qualified Crypto.Hash.SHA256       as SHA256
@@ -32,7 +37,8 @@ import           Data.Maybe               (fromMaybe)
 import           Data.Proxy
 import           Data.String.Conversions  (cs)
 import           Data.Typeable            (Typeable)
-import           Line.Bot.Webhook.Types
+import           Line.Bot.Types           (ChannelSecret (..))
+import           Line.Bot.Webhook.Events  as Events
 import           Network.HTTP.Types       (HeaderName, hContentType)
 import           Network.Wai              (Request, lazyRequestBody,
                                            requestHeaders)

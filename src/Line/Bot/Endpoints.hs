@@ -7,6 +7,12 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+-- |
+-- Module      : Line.Bot.Endpoints
+-- Copyright   : (c) Alexandre Moreno, 2019
+-- License     : BSD3
+-- Maintainer  : alexmorenocano@gmail.com
+-- Stability   : experimental
 
 module Line.Bot.Endpoints where
 
@@ -72,6 +78,12 @@ type GetContent = AuthProtect ChannelAuth
   :> "content"
   :> Get '[OctetStream] ByteString
 
+type IssueLinkToken = AuthProtect ChannelAuth
+  :> "user"
+  :> Capture "userId" (Id User)
+  :> "linkToken"
+  :> Get '[JSON] LinkToken
+
 type Endpoints = "v2" :> "bot" :>
   (    GetProfile
   :<|> GetGroupMemberProfile
@@ -82,4 +94,5 @@ type Endpoints = "v2" :> "bot" :>
   :<|> PushMessage
   :<|> MulticastMessage
   :<|> GetContent
+  :<|> IssueLinkToken
   )

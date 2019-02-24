@@ -1,5 +1,5 @@
 name:                line-bot-sdk
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Haskell SDK for LINE Messaging API
 homepage:            https://github.com/moleike/line-bot-sdk#readme
 bug-reports:         https://github.com/moleike/line-bot-sdk/issues
@@ -28,11 +28,11 @@ description:
 library
   hs-source-dirs:      src
   exposed-modules:     Line.Bot.Webhook
+                     , Line.Bot.Webhook.Events
                      , Line.Bot.Client
+                     , Line.Bot.Types
 
   other-modules:       Line.Bot.Endpoints
-                     , Line.Bot.Types
-                     , Line.Bot.Webhook.Types
 
   build-depends:       base                 >= 4.7 && < 5
                      , aeson                >= 1.4.2 && < 1.5

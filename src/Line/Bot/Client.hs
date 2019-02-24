@@ -7,20 +7,32 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+-- |
+-- Module      : Line.Bot.Client
+-- Copyright   : (c) Alexandre Moreno, 2019
+-- License     : BSD3
+-- Maintainer  : alexmorenocano@gmail.com
+-- Stability   : experimental
 
 module Line.Bot.Client
-  ( module Line.Bot.Types
+  ( Line
   , runLine
-  , Line
-  , ChannelToken(..)
+  , runLineWith
+  -- ** Profile
   , getProfile
+  -- ** Group
   , getGroupMemberProfile
   , leaveGroup
+  -- ** Room
   , getRoomMemberProfile
   , leaveRoom
+  -- ** Message
   , replyMessage
   , pushMessage
   , multicastMessage
+  , getContent
+  -- ** Account Link
+  , issueLinkToken
   )
 where
 
@@ -49,28 +61,30 @@ import           Servant.Server.Experimental.Auth     (AuthHandler,
 host :: BaseUrl
 host = BaseUrl Https "api.line.me" 443 ""
 
-newtype ChannelToken = ChannelToken Text
-  deriving (Eq)
-
-instance IsString ChannelToken where
-  fromString s = ChannelToken (fromString s)
-
-instance ToHttpApiData ChannelToken where
-  toQueryParam (ChannelToken t) = "Bearer " <> t
-
+-- | @Line@ is the monad in which bot requests run. Contains the
+-- OAuth access token for a channel
 type Line = ReaderT ChannelToken ClientM
 
 type Auth = AuthenticatedRequest (AuthProtect ChannelAuth)
 
 type instance AuthClientData (AuthProtect ChannelAuth) = ChannelToken
 
-runLine' :: ClientM a -> IO (Either ServantError a)
-runLine' comp = do
+defaultClient:: ClientM a -> IO (Either ServantError a)
+defaultClient comp = do
   manager <- newManager tlsManagerSettings
   runClientM comp (mkClientEnv manager host)
 
-runLine :: ChannelToken -> Line a -> IO (Either ServantError a)
-runLine token comp = runLine' $ runReaderT comp token
+-- | Runs a @Line@ computation with the given channel access token
+runLine :: Line a -> ChannelToken -> IO (Either ServantError a)
+runLine = runLineWith defaultClient
+
+-- | Runs the monad with a different client evironment
+runLineWith
+  :: (ClientM a -> IO (Either ServantError a))
+  -> Line a
+  -> ChannelToken
+  -> IO (Either ServantError a)
+runLineWith f comp token = f $ runReaderT comp token
 
 mkAuth :: ChannelToken -> Auth
 mkAuth token = mkAuthenticatedRequest token addAuthHeader
@@ -96,6 +110,8 @@ multicastMessage' :: Auth -> MulticastMessageBody -> ClientM NoContent
 
 getContent' :: Auth -> String -> ClientM ByteString
 
+issueLinkToken' :: Auth -> Id User -> ClientM LinkToken
+
 getProfile'
   :<|> getGroupMemberProfile'
   :<|> leaveGroup'
@@ -104,7 +120,8 @@ getProfile'
   :<|> replyMessage'
   :<|> pushMessage'
   :<|> multicastMessage'
-  :<|> getContent' = client (Proxy :: Proxy Endpoints)
+  :<|> getContent'
+  :<|> issueLinkToken' = client (Proxy :: Proxy Endpoints)
 
 getProfile :: Id User -> Line Profile
 getProfile a = ask >>= \token -> lift $ getProfile' (mkAuth token) a
@@ -135,3 +152,10 @@ multicastMessage :: [Id User] -> [Message] -> Line NoContent
 multicastMessage a ms = ask
   >>= \token -> lift $ multicastMessage' (mkAuth token) body
   where body = MulticastMessageBody a ms
+
+getContent :: String -> Line ByteString
+getContent a = ask >>= \token -> lift $ getContent' (mkAuth token) a
+
+issueLinkToken :: Id User -> Line LinkToken
+issueLinkToken a = ask >>= \token -> lift $ issueLinkToken' (mkAuth token) a
+
