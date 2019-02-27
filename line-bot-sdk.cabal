@@ -33,6 +33,7 @@ library
                      , Line.Bot.Types
 
   other-modules:       Line.Bot.Endpoints
+                     , Line.Bot.Client.Auth
 
   build-depends:       base                 >= 4.7 && < 5
                      , aeson                >= 1.4.2 && < 1.5

@@ -4,7 +4,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 -- |
@@ -36,27 +35,19 @@ module Line.Bot.Client
   )
 where
 
-import           Control.Monad.Trans.Class            (lift)
-import           Control.Monad.Trans.Reader           (ReaderT, ask, runReaderT)
-import           Data.ByteString.Lazy                 (ByteString)
-import           Data.Monoid                          ((<>))
+import           Control.Monad.Trans.Class  (lift)
+import           Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
+import           Data.ByteString.Lazy       (ByteString)
 import           Data.Proxy
 import           Data.String
-import           Data.Text                            as T
+import           Data.Text                  as T
+import           Line.Bot.Client.Auth
 import           Line.Bot.Endpoints
 import           Line.Bot.Types
-import           Network.HTTP.Client                  (newManager)
-import           Network.HTTP.Client.TLS              (tlsManagerSettings)
-import           Servant.API                          hiding (addHeader)
+import           Network.HTTP.Client        (newManager)
+import           Network.HTTP.Client.TLS    (tlsManagerSettings)
+import           Servant.API                hiding (addHeader)
 import           Servant.Client
-import           Servant.Client.Core.Internal.Auth    (AuthClientData,
-                                                       AuthenticatedRequest,
-                                                       mkAuthenticatedRequest)
-import           Servant.Client.Core.Internal.Request (Request, addHeader)
-import           Servant.Server.Experimental.Auth     (AuthHandler,
-                                                       AuthServerData,
-                                                       mkAuthHandler)
-
 
 host :: BaseUrl
 host = BaseUrl Https "api.line.me" 443 ""
@@ -65,11 +56,7 @@ host = BaseUrl Https "api.line.me" 443 ""
 -- OAuth access token for a channel
 type Line = ReaderT ChannelToken ClientM
 
-type Auth = AuthenticatedRequest (AuthProtect ChannelAuth)
-
-type instance AuthClientData (AuthProtect ChannelAuth) = ChannelToken
-
-defaultClient:: ClientM a -> IO (Either ServantError a)
+defaultClient :: ClientM a -> IO (Either ServantError a)
 defaultClient comp = do
   manager <- newManager tlsManagerSettings
   runClientM comp (mkClientEnv manager host)
@@ -85,12 +72,6 @@ runLineWith
   -> ChannelToken
   -> IO (Either ServantError a)
 runLineWith f comp token = f $ runReaderT comp token
-
-mkAuth :: ChannelToken -> Auth
-mkAuth token = mkAuthenticatedRequest token addAuthHeader
- where
-  addAuthHeader :: ChannelToken -> Request -> Request
-  addAuthHeader = addHeader "Authorization"
 
 getProfile' :: Auth -> Id User -> ClientM Profile
 
@@ -153,7 +134,7 @@ multicastMessage a ms = ask
   >>= \token -> lift $ multicastMessage' (mkAuth token) body
   where body = MulticastMessageBody a ms
 
-getContent :: String -> Line ByteString
+getContent :: MessageId -> Line ByteString
 getContent a = ask >>= \token -> lift $ getContent' (mkAuth token) a
 
 issueLinkToken :: Id User -> Line LinkToken
