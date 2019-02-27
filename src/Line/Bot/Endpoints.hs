@@ -74,7 +74,7 @@ type MulticastMessage = AuthProtect ChannelAuth
 
 type GetContent = AuthProtect ChannelAuth
   :> "message"
-  :> Capture "messageId" String
+  :> Capture "messageId" MessageId
   :> "content"
   :> Get '[OctetStream] ByteString
 

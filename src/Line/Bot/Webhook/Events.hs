@@ -119,32 +119,33 @@ instance FromJSON Event where
                    , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 5
                    }
 
+
 data Message =
-    Text     { messageId :: Text
+    Text     { messageId :: MessageId
              , text      :: Text
              }
-  | Image    { messageId       :: Text
+  | Image    { messageId       :: MessageId
              , contentProvider :: ContentProvider
              }
-  | Video    { messageId       :: Text
+  | Video    { messageId       :: MessageId
              , duration        :: Int
              , contentProvider :: ContentProvider
              }
-  | Audio    { messageId       :: Text
+  | Audio    { messageId       :: MessageId
              , duration        :: Int
              , contentProvider :: ContentProvider
              }
-  | File     { messageId :: Text
+  | File     { messageId :: MessageId
              , fileSize  :: Int
              , fileName  :: Text
              }
-  | Location { messageId :: Text
+  | Location { messageId :: MessageId
              , title     :: Text
              , address   :: Text
              , latitude  :: Double
              , longitude :: Double
              }
-  | Sticker  { messageId :: Text
+  | Sticker  { messageId :: MessageId
              , packageId :: Text
              , stickerId :: Text
              }
@@ -190,7 +191,6 @@ instance FromJSON EpochMilli where
              . fromRational
              . toRational
              . (/ 1000)
-
 
 data Source =
     SourceUser (Id User)

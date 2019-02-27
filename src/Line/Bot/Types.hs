@@ -23,6 +23,7 @@ module Line.Bot.Types
   , ChannelSecret(..)
   , ChatType(..)
   , Id(..)
+  , MessageId
   , URL(..)
   , Message(..)
   , ReplyToken(..)
@@ -92,6 +93,8 @@ instance FromJSON (Id Group) where
 
 instance FromJSON (Id Room) where
   parseJSON = withText "Id Room" $ return . RoomId
+
+type MessageId = Text
 
 newtype URL = URL Text
   deriving (Show, Eq, Generic)
