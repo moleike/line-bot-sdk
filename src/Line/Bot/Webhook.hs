@@ -46,9 +46,11 @@ import           Servant
 import           Servant.API.ContentTypes
 import           Servant.Server.Internal
 
-
+-- | This type alias just specifies how webhook requests should be handled
 type Webhook = LineReqBody '[JSON] Events :> Post '[JSON] NoContent
 
+-- | A Servant combinator that extracts the request body as a value of type a
+-- and performs signature valiadation
 data LineReqBody (contentTypes :: [*]) (a :: *)
   deriving (Typeable)
 
@@ -87,8 +89,8 @@ instance (AllCTUnrender list a, HasServer api context, HasContextEntry context C
       hSignature = "X-Line-Signature"
 
       validateReqBody :: Maybe B.ByteString -> BL.ByteString -> Bool
-      validateReqBody digest body = maybe False f digest'
+      validateReqBody digest body = maybe False (== SHA256.hmaclazy secret body) digest'
         where
           digest' = Base64.decodeLenient <$> digest
-          f = (== SHA256.hmaclazy (unChannelSecret channelSecret) body)
+          secret  = unChannelSecret channelSecret
 
