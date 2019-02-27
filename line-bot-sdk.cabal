@@ -18,7 +18,7 @@ description:
   of the following modules:
   .
     * A client library for the <https://developers.line.biz/en/docs/messaging-api/ LINE Messaging API>,
-        including the 'Line' monad, which manages the channel credentials.
+      including the 'Line' monad, which manages the channel credentials.
   .
     * A servant combinator to write safe Line webhooks.
   .
@@ -47,6 +47,7 @@ library
                      , errors               >= 2.3.0 && < 2.4
                      , http-client          >= 0.5.14 && < 0.7
                      , http-types           >= 0.12.2 && < 0.13
+                     , http-api-data        >= 0.4 && < 0.5
                      , http-client-tls      >= 0.3.5 && < 0.4
                      , servant              >= 0.15 && < 0.16
                      , string-conversions   >= 0.4.0 && < 0.5

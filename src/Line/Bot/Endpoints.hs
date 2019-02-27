@@ -84,6 +84,18 @@ type IssueLinkToken = AuthProtect ChannelAuth
   :> "linkToken"
   :> Get '[JSON] LinkToken
 
+type IssueChannelToken =
+  ReqBody '[FormUrlEncoded] ClientCredentials
+  :> "oauth"
+  :> "accessToken"
+  :> Post '[JSON] ShortLivedChannelToken
+
+type RevokeChannelToken =
+  ReqBody '[FormUrlEncoded] ChannelToken
+  :> "oauth"
+  :> "revoke"
+  :> PostNoContent '[JSON] NoContent
+
 type Endpoints = "v2" :> "bot" :>
   (    GetProfile
   :<|> GetGroupMemberProfile
@@ -95,4 +107,6 @@ type Endpoints = "v2" :> "bot" :>
   :<|> MulticastMessage
   :<|> GetContent
   :<|> IssueLinkToken
+  :<|> IssueChannelToken
+  :<|> RevokeChannelToken
   )

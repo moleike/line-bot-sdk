@@ -8,6 +8,7 @@
 {-# LANGUAGE KindSignatures            #-}
 {-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE NamedFieldPuns            #-}
+{-# LANGUAGE OverloadedLists           #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE StandaloneDeriving        #-}
@@ -35,6 +36,8 @@ module Line.Bot.Types
   , QuickReply(..)
   , QuickReplyButton(..)
   , Action(..)
+  , ClientCredentials(..)
+  , ShortLivedChannelToken(..)
   )
 where
 
@@ -44,14 +47,19 @@ import qualified Data.ByteString.Char8 as B
 import           Data.Char             (toLower)
 import           Data.List             as L (stripPrefix)
 import           Data.Maybe            (fromJust)
+import           Data.Monoid           ((<>))
 import           Data.String
 import           Data.Text             as T hiding (drop, toLower)
+import           Data.Text.Encoding
 import           GHC.Generics          hiding (to)
 import           Servant.API
 import           Text.Show
+import           Web.FormUrlEncoded    (ToForm (..))
 
 newtype ChannelToken = ChannelToken Text
-  deriving (Eq)
+  deriving (Eq, Show, Generic)
+
+instance FromJSON ChannelToken
 
 instance IsString ChannelToken where
   fromString s = ChannelToken (fromString s)
@@ -59,11 +67,17 @@ instance IsString ChannelToken where
 instance ToHttpApiData ChannelToken where
   toQueryParam (ChannelToken t) = "Bearer " <> t
 
+instance ToForm ChannelToken where
+  toForm (ChannelToken t) = [ ("access_token", t) ]
+
 newtype ChannelSecret = ChannelSecret
   { unChannelSecret :: B.ByteString }
 
 instance IsString ChannelSecret where
   fromString s = ChannelSecret (B.pack s)
+
+instance ToHttpApiData ChannelSecret where
+  toQueryParam = decodeUtf8 . unChannelSecret
 
 data ChatType = User | Group | Room
 
@@ -255,3 +269,26 @@ actionJSONOptions = defaultOptions
         Just s  -> fmap toLower s
         Nothing -> orig
   }
+
+type ChannelId = Id User
+
+data ClientCredentials = ClientCredentials
+  { clientId     :: ChannelId
+  , clientSecret :: ChannelSecret
+  }
+
+instance ToForm ClientCredentials where
+  toForm ClientCredentials{..} =
+    [ ("grant_type", "client_credentials")
+    , ("client_id", toQueryParam clientId)
+    , ("client_secret", toQueryParam clientSecret)
+    ]
+
+data ShortLivedChannelToken = ShortLivedChannelToken
+  { accessToken :: ChannelToken
+  , expiresIn   :: Int
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON ShortLivedChannelToken where
+  parseJSON = genericParseJSON defaultOptions
+    { fieldLabelModifier = camelTo2 '_' }

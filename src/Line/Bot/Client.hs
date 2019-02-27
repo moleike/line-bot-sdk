@@ -32,6 +32,9 @@ module Line.Bot.Client
   , getContent
   -- ** Account Link
   , issueLinkToken
+  -- ** OAuth
+  , issueChannelToken
+  , revokeChannelToken
   )
 where
 
@@ -89,9 +92,13 @@ pushMessage' :: Auth -> PushMessageBody -> ClientM NoContent
 
 multicastMessage' :: Auth -> MulticastMessageBody -> ClientM NoContent
 
-getContent' :: Auth -> String -> ClientM ByteString
+getContent' :: Auth -> MessageId -> ClientM ByteString
 
 issueLinkToken' :: Auth -> Id User -> ClientM LinkToken
+
+issueChannelToken :: ClientCredentials -> ClientM ShortLivedChannelToken
+
+revokeChannelToken :: ChannelToken -> ClientM NoContent
 
 getProfile'
   :<|> getGroupMemberProfile'
@@ -102,7 +109,9 @@ getProfile'
   :<|> pushMessage'
   :<|> multicastMessage'
   :<|> getContent'
-  :<|> issueLinkToken' = client (Proxy :: Proxy Endpoints)
+  :<|> issueLinkToken'
+  :<|> issueChannelToken
+  :<|> revokeChannelToken = client (Proxy :: Proxy Endpoints)
 
 getProfile :: Id User -> Line Profile
 getProfile a = ask >>= \token -> lift $ getProfile' (mkAuth token) a

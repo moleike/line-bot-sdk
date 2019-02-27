@@ -52,13 +52,14 @@ import           Line.Bot.Types        hiding (Message, Text)
 
 
 data Events = Events
-  { destination :: Id User
-  , events      :: [Event]
+  { destination :: Id User -- ^ User ID of a bot that should receive webhook events
+  , events      :: [Event] -- ^ List of webhook event objects
   }
   deriving (Eq, Show, Generic)
 
 instance FromJSON Events
 
+-- | Events generated on the LINE Platform.
 data Event =
     EventMessage      { replyToken :: ReplyToken
                       , message    :: Message
