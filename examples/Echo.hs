@@ -6,7 +6,7 @@
 
 module Main (main) where
 
-import           Control.Monad                        (mapM_)
+import           Control.Monad                        (forM_)
 import           Control.Monad.IO.Class               (liftIO)
 import           Control.Monad.Trans.Reader           (ReaderT, ask, runReaderT)
 import           Data.String                          (fromString)
@@ -32,7 +32,7 @@ echo _ = return NoContent
 handleEvents :: [Event] -> WebM NoContent
 handleEvents events = do
   token <- ask
-  _     <- liftIO $ mapM_ (flip runLine token . echo) events
+  _     <- liftIO $ forM_ events $ flip runLine token . echo
   return NoContent
 
 echoServer :: ServerT API WebM
@@ -41,10 +41,9 @@ echoServer = handleEvents . events
 app :: ChannelToken -> ChannelSecret -> Application
 app token secret = serveWithContext api context server
   where
-    api     = Proxy :: Proxy API
-    server  = hoistServerWithContext api pc nt echoServer
-    nt      = flip runReaderT token
-    pc      = Proxy :: Proxy '[ChannelSecret]
+    api = Proxy :: Proxy API
+    pc = Proxy :: Proxy '[ChannelSecret]
+    server = hoistServerWithContext api pc (flip runReaderT token) echoServer
     context = secret :. EmptyContext
 
 main :: IO ()
