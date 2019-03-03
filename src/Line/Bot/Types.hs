@@ -117,31 +117,31 @@ instance ToJSON URL
 instance FromJSON URL
 
 data Message =
-    Text     { text       :: Text
-             , quickReply :: Maybe QuickReply
-             }
-  | Sticker  { packageId  :: Text
-             , stickerId  :: Text
-             , quickReply :: Maybe QuickReply
-             }
-  | Image    { originalContentUrl :: URL
-             , previewImageUrl    :: URL
-             , quickReply         :: Maybe QuickReply
-             }
-  | Video    { originalContentUrl :: URL
-             , previewImageUrl    :: URL
-             , quickReply         :: Maybe QuickReply
-             }
-  | Audio    { originalContentUrl :: URL
-             , duration           :: Int
-             , quickReply         :: Maybe QuickReply
-             }
-  | Location { title      :: Text
-             , address    :: Text
-             , latitude   :: Double
-             , longitude  :: Double
-             , quickReply :: Maybe QuickReply
-             }
+    MessageText     { text       :: Text
+                    , quickReply :: Maybe QuickReply
+                    }
+  | MessageSticker  { packageId  :: Text
+                    , stickerId  :: Text
+                    , quickReply :: Maybe QuickReply
+                    }
+  | MessageImage    { originalContentUrl :: URL
+                    , previewImageUrl    :: URL
+                    , quickReply         :: Maybe QuickReply
+                    }
+  | MessageVideo    { originalContentUrl :: URL
+                    , previewImageUrl    :: URL
+                    , quickReply         :: Maybe QuickReply
+                    }
+  | MessageAudio    { originalContentUrl :: URL
+                    , duration           :: Int
+                    , quickReply         :: Maybe QuickReply
+                    }
+  | MessageLocation { title      :: Text
+                    , address    :: Text
+                    , latitude   :: Double
+                    , longitude  :: Double
+                    , quickReply :: Maybe QuickReply
+                    }
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message where
@@ -153,7 +153,7 @@ messageJSONOptions = defaultOptions
     { tagFieldName      = "type"
     , contentsFieldName = undefined
     }
-  , constructorTagModifier = fmap toLower
+  , constructorTagModifier = fmap toLower . drop 7
   , omitNothingFields      = True
   }
 

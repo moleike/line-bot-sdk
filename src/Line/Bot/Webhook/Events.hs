@@ -122,34 +122,34 @@ instance FromJSON Event where
 
 
 data Message =
-    Text     { messageId :: MessageId
-             , text      :: Text
-             }
-  | Image    { messageId       :: MessageId
-             , contentProvider :: ContentProvider
-             }
-  | Video    { messageId       :: MessageId
-             , duration        :: Int
-             , contentProvider :: ContentProvider
-             }
-  | Audio    { messageId       :: MessageId
-             , duration        :: Int
-             , contentProvider :: ContentProvider
-             }
-  | File     { messageId :: MessageId
-             , fileSize  :: Int
-             , fileName  :: Text
-             }
-  | Location { messageId :: MessageId
-             , title     :: Text
-             , address   :: Text
-             , latitude  :: Double
-             , longitude :: Double
-             }
-  | Sticker  { messageId :: MessageId
-             , packageId :: Text
-             , stickerId :: Text
-             }
+    MessageText     { messageId :: MessageId
+                    , text      :: Text
+                    }
+  | MessageImage    { messageId       :: MessageId
+                    , contentProvider :: ContentProvider
+                    }
+  | MessageVideo    { messageId       :: MessageId
+                    , duration        :: Int
+                    , contentProvider :: ContentProvider
+                    }
+  | MessageAudio    { messageId       :: MessageId
+                    , duration        :: Int
+                    , contentProvider :: ContentProvider
+                    }
+  | MessageFile     { messageId :: MessageId
+                    , fileSize  :: Int
+                    , fileName  :: Text
+                    }
+  | MessageLocation { messageId :: MessageId
+                    , title     :: Text
+                    , address   :: Text
+                    , latitude  :: Double
+                    , longitude :: Double
+                    }
+  | MessageSticker  { messageId :: MessageId
+                    , packageId :: Text
+                    , stickerId :: Text
+                    }
   deriving (Eq, Show, Generic)
 
 messageJSONOptions :: Options
@@ -158,17 +158,13 @@ messageJSONOptions = defaultOptions
     { tagFieldName      = "type"
     , contentsFieldName = undefined
     }
-  , constructorTagModifier = fmap toLower
-  , fieldLabelModifier     = \orig ->
-      case L.stripPrefix "message" orig of
-        Just s  -> fmap toLower s
-        Nothing -> orig
+  , constructorTagModifier = fmap toLower . drop 7
+  , fieldLabelModifier     = \x -> maybe x (fmap toLower) $ L.stripPrefix "message" x
   , omitNothingFields = True
   }
 
 instance FromJSON Message where
   parseJSON = genericParseJSON messageJSONOptions
-
 
 data ContentProvider = ContentProvider
   { originalContentUrl :: Maybe URL
