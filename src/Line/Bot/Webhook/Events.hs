@@ -32,6 +32,7 @@ module Line.Bot.Webhook.Events
   )
 where
 
+import           Control.Arrow         ((>>>))
 import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.Char
@@ -112,14 +113,13 @@ data Event =
   deriving (Eq, Show, Generic)
 
 instance FromJSON Event where
-  parseJSON = genericParseJSON $
-    defaultOptions { sumEncoding            = TaggedObject
-                     { tagFieldName      = "type"
-                     , contentsFieldName = undefined
-                     }
-                   , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 5
-                   }
-
+  parseJSON = genericParseJSON defaultOptions
+    { sumEncoding = TaggedObject
+      { tagFieldName      = "type"
+      , contentsFieldName = undefined
+      }
+    , constructorTagModifier = drop 5 >>> \(x:xs) -> toLower x : xs
+    }
 
 data Message =
     MessageText     { messageId :: MessageId

@@ -93,9 +93,9 @@ getContent' :: Auth -> MessageId -> ClientM ByteString
 
 issueLinkToken' :: Auth -> Id User -> ClientM LinkToken
 
-issueChannelToken :: ClientCredentials -> ClientM ShortLivedChannelToken
+issueChannelToken' :: ClientCredentials -> ClientM ShortLivedChannelToken
 
-revokeChannelToken :: ChannelToken -> ClientM NoContent
+revokeChannelToken' :: ChannelToken -> ClientM NoContent
 
 getProfile'
   :<|> getGroupMemberProfile'
@@ -107,8 +107,8 @@ getProfile'
   :<|> multicastMessage'
   :<|> getContent'
   :<|> issueLinkToken'
-  :<|> issueChannelToken
-  :<|> revokeChannelToken = client (Proxy :: Proxy Endpoints)
+  :<|> issueChannelToken'
+  :<|> revokeChannelToken' = client (Proxy :: Proxy Endpoints)
 
 getProfile :: Id User -> Line Profile
 getProfile a = ask >>= \token -> lift $ getProfile' (mkAuth token) a
@@ -145,4 +145,10 @@ getContent a = ask >>= \token -> lift $ getContent' (mkAuth token) a
 
 issueLinkToken :: Id User -> Line LinkToken
 issueLinkToken a = ask >>= \token -> lift $ issueLinkToken' (mkAuth token) a
+
+issueChannelToken :: ChannelId -> ChannelSecret -> ClientM ShortLivedChannelToken
+issueChannelToken a b = issueChannelToken' $ ClientCredentials a b
+
+revokeChannelToken :: ChannelToken -> ClientM NoContent
+revokeChannelToken = revokeChannelToken'
 

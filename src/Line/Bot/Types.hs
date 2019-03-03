@@ -22,6 +22,7 @@
 module Line.Bot.Types
   ( ChannelToken(..)
   , ChannelSecret(..)
+  , ChannelId(..)
   , ChatType(..)
   , Id(..)
   , MessageId
@@ -41,6 +42,7 @@ module Line.Bot.Types
   )
 where
 
+import           Control.Arrow         ((>>>))
 import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.ByteString.Char8 as B
@@ -56,7 +58,8 @@ import           Servant.API
 import           Text.Show
 import           Web.FormUrlEncoded    (ToForm (..))
 
-newtype ChannelToken = ChannelToken Text
+
+newtype ChannelToken = ChannelToken { unChannelToken :: Text }
   deriving (Eq, Show, Generic)
 
 instance FromJSON ChannelToken
@@ -65,19 +68,28 @@ instance IsString ChannelToken where
   fromString s = ChannelToken (fromString s)
 
 instance ToHttpApiData ChannelToken where
-  toQueryParam (ChannelToken t) = "Bearer " <> t
+  toHeader (ChannelToken t)     = encodeUtf8 $ "Bearer " <> t
+  toQueryParam (ChannelToken t) = t
 
 instance ToForm ChannelToken where
   toForm (ChannelToken t) = [ ("access_token", t) ]
 
-newtype ChannelSecret = ChannelSecret
-  { unChannelSecret :: B.ByteString }
+newtype ChannelSecret = ChannelSecret { unChannelSecret :: B.ByteString }
 
 instance IsString ChannelSecret where
   fromString s = ChannelSecret (B.pack s)
 
 instance ToHttpApiData ChannelSecret where
   toQueryParam = decodeUtf8 . unChannelSecret
+
+newtype ChannelId = ChannelId { unChannelId :: Text }
+  deriving (Eq, Show, Generic)
+
+instance IsString ChannelId where
+  fromString s = ChannelId (fromString s)
+
+instance ToHttpApiData ChannelId where
+  toQueryParam (ChannelId t) = t
 
 data ChatType = User | Group | Room
 
@@ -207,32 +219,24 @@ data MulticastMessageBody = MulticastMessageBody
 
 instance ToJSON MulticastMessageBody
 
-data QuickReply = QuickReply
+newtype QuickReply = QuickReply
   { items :: [QuickReplyButton] }
   deriving (Eq, Show, Generic)
 
 instance ToJSON QuickReply
 
-data QuickReplyButton =
-    Action { imageUrl :: Maybe URL
-           , action   :: Action
-           }
-  deriving (Eq, Show, Generic)
-
-quickReplyButtonJSONOptions :: Options
-quickReplyButtonJSONOptions = defaultOptions
-  { sumEncoding            = TaggedObject
-    { tagFieldName      = "type"
-    , contentsFieldName = undefined
-    }
-  , constructorTagModifier = fmap toLower
-  , omitNothingFields      = True
-  , tagSingleConstructors  = True
+data QuickReplyButton = QuickReplyButton
+  { imageUrl :: Maybe URL
+  , action   :: Action
   }
+  deriving (Eq, Show)
 
 instance ToJSON QuickReplyButton where
-  toJSON = genericToJSON quickReplyButtonJSONOptions
-
+  toJSON QuickReplyButton{..} = object
+    [ "type"     .= pack "action"
+    , "imageUrl" .= imageUrl
+    , "action"   .= action
+    ]
 
 data Action =
     ActionPostback   { label        :: Text
@@ -242,8 +246,8 @@ data Action =
   | ActionMessage    { label :: Text
                      , text  :: Text
                      }
-  | ActionURI        { label :: Text
-                     , uri   :: Text
+  | ActionUri        { label :: Text
+                     , uri   :: URL
                      }
   | ActionCamera     { label :: Text
                      }
@@ -262,15 +266,10 @@ actionJSONOptions = defaultOptions
     { tagFieldName      = "type"
     , contentsFieldName = undefined
     }
-  , constructorTagModifier = (\(x : xs) -> toLower x : xs) . drop 6
+  , constructorTagModifier = drop 6 >>> \(x:xs) -> toLower x : xs
   , omitNothingFields      = True
-  , fieldLabelModifier     = \orig ->
-      case L.stripPrefix "postback" orig of
-        Just s  -> fmap toLower s
-        Nothing -> orig
+  , fieldLabelModifier     = \x -> maybe x (fmap toLower) $ L.stripPrefix "postback" x
   }
-
-type ChannelId = Id User
 
 data ClientCredentials = ClientCredentials
   { clientId     :: ChannelId
