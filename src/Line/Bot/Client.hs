@@ -16,7 +16,8 @@
 module Line.Bot.Client
   ( Line
   , runLine
-  , runLineWith
+  , runLine'
+  , withLineEnv
   -- ** Profile
   , getProfile
   -- ** Group
@@ -59,22 +60,18 @@ host = BaseUrl Https "api.line.me" 443 ""
 -- OAuth access token for a channel
 type Line = ReaderT ChannelToken ClientM
 
-defaultClient :: ClientM a -> IO (Either ServantError a)
-defaultClient comp = do
+-- | Executes a request in the LINE plaform (default)
+withLineEnv :: (ClientEnv -> IO a) -> IO a
+withLineEnv app = do
   manager <- newManager tlsManagerSettings
-  runClientM comp (mkClientEnv manager host)
+  app $ mkClientEnv manager host
+
+runLine' :: ClientM a -> IO (Either ServantError a)
+runLine' comp = withLineEnv $ \env -> runClientM comp env
 
 -- | Runs a @Line@ computation with the given channel access token
 runLine :: Line a -> ChannelToken -> IO (Either ServantError a)
-runLine = runLineWith defaultClient
-
--- | Runs the monad with a different client evironment
-runLineWith
-  :: (ClientM a -> IO (Either ServantError a))
-  -> Line a
-  -> ChannelToken
-  -> IO (Either ServantError a)
-runLineWith f comp token = f $ runReaderT comp token
+runLine comp token = runLine' $ runReaderT comp token
 
 getProfile' :: Auth -> Id User -> ClientM Profile
 
