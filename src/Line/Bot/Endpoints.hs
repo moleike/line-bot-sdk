@@ -21,64 +21,65 @@ import           Line.Bot.Types
 import           Servant.API
 import           Servant.Client
 
-data ChannelAuth
+-- | Combinator for authenticating with the channel access token
+type ChannelAuth = AuthProtect "channel-access-token"
 
-type GetProfile = AuthProtect ChannelAuth
+type GetProfile = ChannelAuth
   :> "profile"
   :> Capture "userId" (Id User)
   :> Get '[JSON] Profile
 
-type GetGroupMemberProfile = AuthProtect ChannelAuth
+type GetGroupMemberProfile = ChannelAuth
   :> "group"
   :> Capture "groupId" (Id Group)
   :> "member"
   :> Capture "userId" (Id User)
   :> Get '[JSON] Profile
 
-type LeaveGroup = AuthProtect ChannelAuth
+type LeaveGroup = ChannelAuth
   :> "group"
   :> Capture "groupId" (Id Group)
   :> "leave"
   :> PostNoContent '[JSON] NoContent
 
-type GetRoomMemberProfile = AuthProtect ChannelAuth
+type GetRoomMemberProfile = ChannelAuth
   :> "room"
   :> Capture "roomId" (Id Room)
   :> "member"
   :> Capture "userId" (Id User)
   :> Get '[JSON] Profile
 
-type LeaveRoom = AuthProtect ChannelAuth
+type LeaveRoom = ChannelAuth
   :> "room"
   :> Capture "roomId" (Id Room)
   :> "leave"
   :> PostNoContent '[JSON] NoContent
 
-type ReplyMessage = AuthProtect ChannelAuth
+type ReplyMessage = ChannelAuth
   :> ReqBody '[JSON] ReplyMessageBody
   :> "message"
   :> "reply"
   :> PostNoContent '[JSON] NoContent
 
-type PushMessage = AuthProtect ChannelAuth
+type PushMessage = ChannelAuth
   :> ReqBody '[JSON] PushMessageBody
   :> "message"
   :> "push"
   :> PostNoContent '[JSON] NoContent
 
-type MulticastMessage = AuthProtect ChannelAuth
+type MulticastMessage = ChannelAuth
   :> ReqBody '[JSON] MulticastMessageBody
   :> "message"
   :> "multicast"
   :> PostNoContent '[JSON] NoContent
 
-type GetContent = AuthProtect ChannelAuth
+type GetContent = ChannelAuth
   :> "message"
   :> Capture "messageId" MessageId
   :> "content"
   :> Get '[OctetStream] ByteString
 
-type IssueLinkToken = AuthProtect ChannelAuth
+type IssueLinkToken = ChannelAuth
   :> "user"
   :> Capture "userId" (Id User)
   :> "linkToken"

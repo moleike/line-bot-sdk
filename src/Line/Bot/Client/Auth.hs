@@ -17,9 +17,10 @@ import           Servant.Client.Core.Internal.Auth    (AuthClientData,
                                                        mkAuthenticatedRequest)
 import           Servant.Client.Core.Internal.Request (Request, addHeader)
 
-type Auth = AuthenticatedRequest (AuthProtect ChannelAuth)
 
-type instance AuthClientData (AuthProtect ChannelAuth) = ChannelToken
+type instance AuthClientData ChannelAuth = ChannelToken
+
+type Auth = AuthenticatedRequest ChannelAuth
 
 mkAuth :: ChannelToken -> Auth
 mkAuth token = mkAuthenticatedRequest token addAuthorizationHeader
