@@ -79,6 +79,27 @@ type GetContent = ChannelAuth
   :> "content"
   :> Get '[OctetStream] ByteString
 
+type GetReplyMessageCount = ChannelAuth
+  :> "message"
+  :> "delivery"
+  :> "reply"
+  :> QueryParam' '[Required, Strict] "date" LineDate
+  :> Get '[JSON] MessageCount
+
+type GetPushMessageCount = ChannelAuth
+  :> "message"
+  :> "delivery"
+  :> "push"
+  :> QueryParam' '[Required, Strict] "date" LineDate
+  :> Get '[JSON] MessageCount
+
+type GetMulticastMessageCount = ChannelAuth
+  :> "message"
+  :> "delivery"
+  :> "multicast"
+  :> QueryParam' '[Required, Strict] "date" LineDate
+  :> Get '[JSON] MessageCount
+
 type IssueLinkToken = ChannelAuth
   :> "user"
   :> Capture "userId" (Id User)
@@ -107,6 +128,9 @@ type Endpoints = "v2" :> "bot" :>
   :<|> PushMessage
   :<|> MulticastMessage
   :<|> GetContent
+  :<|> GetReplyMessageCount
+  :<|> GetPushMessageCount
+  :<|> GetMulticastMessageCount
   :<|> IssueLinkToken
   :<|> IssueChannelToken
   :<|> RevokeChannelToken

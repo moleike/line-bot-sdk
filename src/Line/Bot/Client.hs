@@ -31,6 +31,9 @@ module Line.Bot.Client
   , pushMessage
   , multicastMessage
   , getContent
+  , getPushMessageCount
+  , getReplyMessageCount
+  , getMulticastMessageCount
   -- ** Account Link
   , issueLinkToken
   -- ** OAuth
@@ -43,14 +46,13 @@ import           Control.Monad.Trans.Class  (lift)
 import           Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
 import           Data.ByteString.Lazy       (ByteString)
 import           Data.Proxy
-import           Data.String
-import           Data.Text                  as T
+import           Data.Time.Calendar         (Day)
 import           Line.Bot.Client.Auth
 import           Line.Bot.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client        (newManager)
 import           Network.HTTP.Client.TLS    (tlsManagerSettings)
-import           Servant.API                hiding (addHeader)
+import           Servant.API
 import           Servant.Client
 
 host :: BaseUrl
@@ -60,12 +62,12 @@ host = BaseUrl Https "api.line.me" 443 ""
 -- OAuth access token for a channel
 type Line = ReaderT ChannelToken ClientM
 
--- | Executes a request in the LINE plaform (default)
 withLineEnv :: (ClientEnv -> IO a) -> IO a
 withLineEnv app = do
   manager <- newManager tlsManagerSettings
   app $ mkClientEnv manager host
 
+-- | Executes a request in the LINE plaform (default)
 runLine' :: ClientM a -> IO (Either ServantError a)
 runLine' comp = withLineEnv $ \env -> runClientM comp env
 
@@ -91,6 +93,12 @@ multicastMessage' :: Auth -> MulticastMessageBody -> ClientM NoContent
 
 getContent' :: Auth -> MessageId -> ClientM ByteString
 
+getPushMessageCount' :: Auth -> LineDate -> ClientM MessageCount
+
+getReplyMessageCount' :: Auth -> LineDate -> ClientM MessageCount
+
+getMulticastMessageCount' :: Auth -> LineDate -> ClientM MessageCount
+
 issueLinkToken' :: Auth -> Id User -> ClientM LinkToken
 
 issueChannelToken' :: ClientCredentials -> ClientM ShortLivedChannelToken
@@ -106,6 +114,9 @@ getProfile'
   :<|> pushMessage'
   :<|> multicastMessage'
   :<|> getContent'
+  :<|> getPushMessageCount'
+  :<|> getReplyMessageCount'
+  :<|> getMulticastMessageCount'
   :<|> issueLinkToken'
   :<|> issueChannelToken'
   :<|> revokeChannelToken' = client (Proxy :: Proxy Endpoints)
@@ -140,8 +151,21 @@ multicastMessage a ms = ask
   >>= \token -> lift $ multicastMessage' (mkAuth token) body
   where body = MulticastMessageBody a ms
 
+-- | TODO: this should use a streaming library for constant memory usage over large data
 getContent :: MessageId -> Line ByteString
 getContent a = ask >>= \token -> lift $ getContent' (mkAuth token) a
+
+getPushMessageCount :: Day -> Line MessageCount
+getPushMessageCount a =
+  ask >>= \token -> lift $ getPushMessageCount' (mkAuth token) (LineDate a)
+
+getReplyMessageCount :: Day -> Line MessageCount
+getReplyMessageCount a =
+  ask >>= \token -> lift $ getReplyMessageCount' (mkAuth token) (LineDate a)
+
+getMulticastMessageCount :: Day -> Line MessageCount
+getMulticastMessageCount a =
+  ask >>= \token -> lift $ getMulticastMessageCount' (mkAuth token) (LineDate a)
 
 issueLinkToken :: Id User -> Line LinkToken
 issueLinkToken a = ask >>= \token -> lift $ issueLinkToken' (mkAuth token) a

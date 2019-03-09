@@ -39,6 +39,8 @@ module Line.Bot.Types
   , Action(..)
   , ClientCredentials(..)
   , ShortLivedChannelToken(..)
+  , LineDate(..)
+  , MessageCount(..)
   )
 where
 
@@ -53,6 +55,8 @@ import           Data.Monoid           ((<>))
 import           Data.String
 import           Data.Text             as T hiding (drop, toLower)
 import           Data.Text.Encoding
+import           Data.Time.Calendar    (Day)
+import           Data.Time.Format
 import           GHC.Generics          hiding (to)
 import           Servant.API
 import           Text.Show
@@ -291,3 +295,22 @@ data ShortLivedChannelToken = ShortLivedChannelToken
 instance FromJSON ShortLivedChannelToken where
   parseJSON = genericParseJSON defaultOptions
     { fieldLabelModifier = camelTo2 '_' }
+
+newtype LineDate = LineDate { unLineDate :: Day } deriving (Eq)
+
+instance Show LineDate where
+  show = formatTime defaultTimeLocale "%Y%m%d" . unLineDate
+
+instance ToHttpApiData LineDate where
+  toQueryParam = T.pack . show
+
+data MessageCount = MessageCount
+  { count  :: Int
+  , status :: String
+  } deriving (Eq, Show)
+
+instance FromJSON MessageCount where
+  parseJSON = withObject "MessageCount" $ \o -> do
+    count  <- o .:  "success"
+    status <- o .:  "status"
+    return $ MessageCount{..}
