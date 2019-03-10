@@ -79,13 +79,23 @@ executable echo-server
 test-suite line-bot-sdk-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
+  other-modules:       Line.Bot.WebhookSpec
   main-is:             Spec.hs
   build-depends:       base
                      , line-bot-sdk
+                     , text
                      , hspec
-                     , hspec-wai
-                     , hspec-wai-json
+                     , http-types
+                     , http-client
                      , aeson
+                     , aeson-qq
+                     , QuickCheck
+                     , quickcheck-instances
+                     , generic-random
+                     , servant >= 0.15
+                     , servant-server >= 0.15
+                     , servant-mock
+                     , warp
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
