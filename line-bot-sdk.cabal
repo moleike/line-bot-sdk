@@ -83,6 +83,8 @@ test-suite line-bot-sdk-test
   main-is:             Spec.hs
   build-depends:       base
                      , line-bot-sdk
+                     , base64-bytestring
+                     , cryptohash-sha256
                      , text
                      , hspec
                      , http-types
