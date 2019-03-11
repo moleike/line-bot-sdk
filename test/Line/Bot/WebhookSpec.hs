@@ -5,23 +5,21 @@
 
 module Line.Bot.WebhookSpec (spec) where
 
-import qualified Control.Concurrent        as C
-import           Control.Exception         (bracket)
-import           Control.Monad.IO.Class    (liftIO)
 import qualified Crypto.Hash.SHA256        as SHA256
 import           Data.Aeson                (Value, encode)
 import           Data.Aeson.QQ
+import           Data.Aeson.Types          (emptyObject)
 import qualified Data.ByteString.Base64    as Base64
-import           Line.Bot.Types            (ChannelSecret(..))
+import           Line.Bot.Types            (ChannelSecret (..))
 import           Line.Bot.Webhook          (Webhook)
 import           Line.Bot.Webhook.Events   (Events)
-import           Network.HTTP.Client       hiding (Proxy)
 import           Network.HTTP.Types        (HeaderName, hContentType)
+import           Network.HTTP.Types.Method
 import           Network.HTTP.Types.Status
-import qualified Network.Wai.Handler.Warp  as Warp (run)
 import           Servant
 import           Servant.Server            (Context ((:.), EmptyContext))
 import           Test.Hspec                hiding (context)
+import           Test.Hspec.Wai
 
 hSignature :: HeaderName
 hSignature = "X-Line-Signature"
@@ -59,42 +57,33 @@ testBody = [aesonQQ|
   }
 |]
 
-
-withApp :: IO () -> IO ()
-withApp action =
-  -- we can spin up a server in another thread and kill that thread when done
-  -- in an exception-safe way
-  bracket (liftIO $ C.forkIO $ Warp.run 8888 app)
-    C.killThread
-    (const action)
-
 spec :: Spec
-spec = around_ withApp $ do
+spec = with (pure app) $ do
   describe "Webhook server" $ do
-
-    manager <- runIO $ newManager defaultManagerSettings
-    initialRequest <- runIO $ parseRequest "POST http://localhost:8888"
 
     it "should return 200 with a signed request" $ do
       let body    = encode testBody
           digest  = Base64.encode $ SHA256.hmaclazy (unChannelSecret secret) body
-          request = initialRequest {
-            requestBody    = RequestBodyLBS body
-          , requestHeaders =
-              (hContentType, "application/json") : (hSignature, digest)
-              : filter (\(x, _) -> x /= hContentType) (requestHeaders initialRequest)
-          }
+          headers = [(hContentType, "application/json"), (hSignature, digest)]
 
-      response <- httpLbs request manager
-      responseStatus response `shouldBe` status200
+      request methodPost "/" headers body `shouldRespondWith` 200
+
+    it "should return 400 for an invalid body" $ do
+      let body    = encode emptyObject
+          digest  = Base64.encode $ SHA256.hmaclazy (unChannelSecret secret) body
+          headers = [(hContentType, "application/json"), (hSignature, digest)]
+
+      request methodPost "/" headers body `shouldRespondWith` 400
 
     it "should return 401 for requests missing the signature header" $ do
-      let request = initialRequest {
-            requestBody    = RequestBodyLBS $ encode testBody
-          , requestHeaders =
-              (hContentType, "application/json")
-              : filter (\(x, _) -> x /= hContentType) (requestHeaders initialRequest)
-          }
+      let body    = encode testBody
+          headers = [(hContentType, "application/json")]
 
-      response <- httpLbs request manager
-      responseStatus response `shouldBe` status401
+      request methodPost "/" headers body `shouldRespondWith` 401
+
+    it "should return 401 when secret is incorrect" $ do
+      let body    = encode testBody
+          digest  = Base64.encode $ SHA256.hmaclazy "incorrect" body
+          headers = [(hContentType, "application/json"), (hSignature, digest)]
+
+      request methodPost "/" headers body `shouldRespondWith` 401
