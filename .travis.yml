@@ -17,8 +17,7 @@ language: generic
 # Caching so the next build will be fast too.
 cache:
   directories:
-  - /Users/alex/.stack
-
+    - $HOME/.stack
 # Ensure necessary system libraries are present
 addons:
   apt:
