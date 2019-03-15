@@ -115,6 +115,15 @@ instance ToHttpApiData (Id a) where
 instance ToJSON (Id a) where
   toJSON = String . toQueryParam
 
+instance IsString (Id User) where
+  fromString s = UserId (fromString s)
+
+instance IsString (Id Group) where
+  fromString s = GroupId (fromString s)
+
+instance IsString (Id Room) where
+  fromString s = RoomId (fromString s)
+
 instance FromJSON (Id User) where
   parseJSON = withText "Id User" $ return . UserId
 
@@ -179,7 +188,7 @@ data Profile = Profile
   , pictureUrl    :: URL
   , statusMessage :: Maybe Text
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 instance FromJSON Profile
 
