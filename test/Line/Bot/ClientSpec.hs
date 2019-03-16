@@ -16,7 +16,7 @@ import           Data.Text
 import           Data.Text.Encoding
 import           Line.Bot.Client                  hiding (runLine)
 import           Line.Bot.Client.Auth
-import           Line.Bot.Endpoints               (ChannelAuth)
+import           Line.Bot.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client              (defaultManagerSettings,
                                                    newManager)
@@ -45,9 +45,7 @@ authHandler = mkAuthHandler $ \request -> do
 serverContext :: Context '[AuthHandler Request ChannelToken]
 serverContext = authHandler :. EmptyContext
 
-type API =
-       ChannelAuth :> "v2" :> "bot" :> "profile" :> "1" :> Get '[JSON] Value
-  :<|> ChannelAuth :> "v2" :> "bot" :> "group" :> "1" :> "member" :> "1" :> Get '[JSON] Value
+type API = GetProfile Value :<|> GetGroupMemberProfile Value
 
 testProfile :: Value
 testProfile = [aesonQQ|
@@ -69,8 +67,8 @@ runLine comp port = withPort port $ runClientM $ runReaderT comp "fake"
 
 app :: Application
 app = serveWithContext (Proxy :: Proxy API) serverContext $
-       (\_ -> return testProfile)
-  :<|> (\_ -> return testProfile)
+       (\_ _ -> return testProfile)
+  :<|> (\_ _ _ -> return testProfile)
 
 spec :: Spec
 spec = describe "Line client" $ do

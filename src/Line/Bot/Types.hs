@@ -115,6 +115,15 @@ instance ToHttpApiData (Id a) where
 instance ToJSON (Id a) where
   toJSON = String . toQueryParam
 
+instance FromHttpApiData (Id User) where
+  parseUrlPiece = pure . UserId
+
+instance FromHttpApiData (Id Group) where
+  parseUrlPiece = pure . GroupId
+
+instance FromHttpApiData (Id Room) where
+  parseUrlPiece = pure . RoomId
+
 instance IsString (Id User) where
   fromString s = UserId (fromString s)
 
