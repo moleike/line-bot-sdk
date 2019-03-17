@@ -45,7 +45,7 @@ authHandler = mkAuthHandler $ \request -> do
 serverContext :: Context '[AuthHandler Request ChannelToken]
 serverContext = authHandler :. EmptyContext
 
-type API = GetProfile Value :<|> GetGroupMemberProfile Value
+type API = GetProfile' Value :<|> GetGroupMemberProfile' Value
 
 testProfile :: Value
 testProfile = [aesonQQ|

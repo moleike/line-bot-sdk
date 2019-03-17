@@ -24,19 +24,23 @@ import           Servant.Client
 -- | Combinator for authenticating with the channel access token
 type ChannelAuth = AuthProtect "channel-access-token"
 
-type GetProfile a = ChannelAuth
+type GetProfile' a = ChannelAuth
   :> "v2" :> "bot"
   :> "profile"
   :> Capture "userId" (Id User)
   :> Get '[JSON] a
 
-type GetGroupMemberProfile a = ChannelAuth
+type GetProfile = GetProfile' Profile
+
+type GetGroupMemberProfile' a = ChannelAuth
   :> "v2" :> "bot"
   :> "group"
   :> Capture "groupId" (Id Group)
   :> "member"
   :> Capture "userId" (Id User)
   :> Get '[JSON] a
+
+type GetGroupMemberProfile = GetGroupMemberProfile' Profile
 
 type LeaveGroup = ChannelAuth
   :> "v2" :> "bot"
@@ -45,13 +49,15 @@ type LeaveGroup = ChannelAuth
   :> "leave"
   :> PostNoContent '[JSON] NoContent
 
-type GetRoomMemberProfile a = ChannelAuth
+type GetRoomMemberProfile' a = ChannelAuth
   :> "v2" :> "bot"
   :> "room"
   :> Capture "roomId" (Id Room)
   :> "member"
   :> Capture "userId" (Id User)
   :> Get '[JSON] a
+
+type GetRoomMemberProfile = GetRoomMemberProfile' Profile
 
 type LeaveRoom = ChannelAuth
   :> "v2" :> "bot"
@@ -60,26 +66,32 @@ type LeaveRoom = ChannelAuth
   :> "leave"
   :> PostNoContent '[JSON] NoContent
 
-type ReplyMessage a = ChannelAuth
+type ReplyMessage' a = ChannelAuth
   :> "v2" :> "bot"
   :> "message"
   :> "reply"
   :> ReqBody '[JSON] a
   :> PostNoContent '[JSON] NoContent
 
-type PushMessage a = ChannelAuth
+type ReplyMessage = ReplyMessage' ReplyMessageBody
+
+type PushMessage' a = ChannelAuth
   :> "v2" :> "bot"
   :> "message"
   :> "push"
   :> ReqBody '[JSON] a
   :> PostNoContent '[JSON] NoContent
 
-type MulticastMessage a = ChannelAuth
+type PushMessage = PushMessage' PushMessageBody
+
+type MulticastMessage' a = ChannelAuth
   :> "v2" :> "bot"
   :> "message"
   :> "multicast"
   :> ReqBody '[JSON] a
   :> PostNoContent '[JSON] NoContent
+
+type MulticastMessage = MulticastMessage' MulticastMessageBody
 
 type GetContent = ChannelAuth
   :> "v2" :> "bot"
@@ -88,7 +100,7 @@ type GetContent = ChannelAuth
   :> "content"
   :> Get '[OctetStream] ByteString
 
-type GetReplyMessageCount a b = ChannelAuth
+type GetReplyMessageCount' a b = ChannelAuth
   :> "v2" :> "bot"
   :> "message"
   :> "delivery"
@@ -96,7 +108,9 @@ type GetReplyMessageCount a b = ChannelAuth
   :> QueryParam' '[Required, Strict] "date" a
   :> Get '[JSON] b
 
-type GetPushMessageCount a b = ChannelAuth
+type GetReplyMessageCount = GetReplyMessageCount' LineDate MessageCount
+
+type GetPushMessageCount' a b = ChannelAuth
   :> "v2" :> "bot"
   :> "message"
   :> "delivery"
@@ -104,7 +118,9 @@ type GetPushMessageCount a b = ChannelAuth
   :> QueryParam' '[Required, Strict] "date" a
   :> Get '[JSON] b
 
-type GetMulticastMessageCount a b = ChannelAuth
+type GetPushMessageCount = GetPushMessageCount' LineDate MessageCount
+
+type GetMulticastMessageCount' a b = ChannelAuth
   :> "v2" :> "bot"
   :> "message"
   :> "delivery"
@@ -112,41 +128,31 @@ type GetMulticastMessageCount a b = ChannelAuth
   :> QueryParam' '[Required, Strict] "date" a
   :> Get '[JSON] b
 
-type IssueLinkToken a = ChannelAuth
+type GetMulticastMessageCount = GetMulticastMessageCount' LineDate MessageCount
+
+type IssueLinkToken' a = ChannelAuth
   :> "v2" :> "bot"
   :> "user"
   :> Capture "userId" (Id User)
   :> "linkToken"
   :> Get '[JSON] a
 
-type IssueChannelToken a b =
+type IssueLinkToken = IssueLinkToken' LinkToken
+
+type IssueChannelToken' a b =
   ReqBody '[FormUrlEncoded] a
   :> "v2" :> "bot"
   :> "oauth"
   :> "accessToken"
   :> Post '[JSON] b
 
-type RevokeChannelToken a =
+type IssueChannelToken = IssueChannelToken' ClientCredentials ShortLivedChannelToken
+
+type RevokeChannelToken' a =
   ReqBody '[FormUrlEncoded] a
   :> "v2" :> "bot"
   :> "oauth"
   :> "revoke"
   :> PostNoContent '[JSON] NoContent
 
-type Endpoints =
-  (    GetProfile Profile
-  :<|> GetGroupMemberProfile Profile
-  :<|> LeaveGroup
-  :<|> GetRoomMemberProfile Profile
-  :<|> LeaveRoom
-  :<|> ReplyMessage ReplyMessageBody
-  :<|> PushMessage PushMessageBody
-  :<|> MulticastMessage MulticastMessageBody
-  :<|> GetContent
-  :<|> GetReplyMessageCount LineDate MessageCount
-  :<|> GetPushMessageCount LineDate MessageCount
-  :<|> GetMulticastMessageCount LineDate MessageCount
-  :<|> IssueLinkToken LinkToken
-  :<|> IssueChannelToken ClientCredentials ShortLivedChannelToken
-  :<|> RevokeChannelToken ChannelToken
-  )
+type RevokeChannelToken = RevokeChannelToken' ChannelToken
