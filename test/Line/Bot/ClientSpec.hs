@@ -15,8 +15,8 @@ import           Data.ByteString                  as B (stripPrefix)
 import           Data.Text
 import           Data.Text.Encoding
 import           Line.Bot.Client                  hiding (runLine)
-import           Line.Bot.Client.Auth
-import           Line.Bot.Endpoints
+import           Line.Bot.Internal.Auth
+import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client              (defaultManagerSettings,
                                                    newManager)

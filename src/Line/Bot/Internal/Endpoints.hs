@@ -8,13 +8,13 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 -- |
--- Module      : Line.Bot.Endpoints
+-- Module      : Line.Bot.Internal.Endpoints
 -- Copyright   : (c) Alexandre Moreno, 2019
 -- License     : BSD3
 -- Maintainer  : alexmorenocano@gmail.com
 -- Stability   : experimental
 
-module Line.Bot.Endpoints where
+module Line.Bot.Internal.Endpoints where
 
 import           Data.ByteString.Lazy (ByteString)
 import           Line.Bot.Types

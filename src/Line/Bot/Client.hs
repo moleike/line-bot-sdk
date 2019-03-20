@@ -41,16 +41,16 @@ module Line.Bot.Client
   )
 where
 
-import           Control.Monad.Trans.Class  (lift)
-import           Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
-import           Data.ByteString.Lazy       (ByteString)
+import           Control.Monad.Trans.Class   (lift)
+import           Control.Monad.Trans.Reader  (ReaderT, ask, runReaderT)
+import           Data.ByteString.Lazy        (ByteString)
 import           Data.Proxy
-import           Data.Time.Calendar         (Day)
-import           Line.Bot.Client.Auth
-import           Line.Bot.Endpoints
+import           Data.Time.Calendar          (Day)
+import           Line.Bot.Internal.Auth
+import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
-import           Network.HTTP.Client        (newManager)
-import           Network.HTTP.Client.TLS    (tlsManagerSettings)
+import           Network.HTTP.Client         (newManager)
+import           Network.HTTP.Client.TLS     (tlsManagerSettings)
 import           Servant.API
 import           Servant.Client
 

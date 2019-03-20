@@ -30,9 +30,9 @@ library
   exposed-modules:     Line.Bot.Webhook
                      , Line.Bot.Webhook.Events
                      , Line.Bot.Client
-                     , Line.Bot.Client.Auth
                      , Line.Bot.Types
-                     , Line.Bot.Endpoints
+                     , Line.Bot.Internal.Auth
+                     , Line.Bot.Internal.Endpoints
 
   build-depends:       base                 >= 4.7 && < 5
                      , aeson                >= 1.4.2 && < 1.5
