@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -99,6 +98,13 @@ type GetContent = ChannelAuth
   :> Capture "messageId" MessageId
   :> "content"
   :> Get '[OctetStream] ByteString
+
+type GetContentStream = ChannelAuth
+  :> "v2" :> "bot"
+  :> "message"
+  :> Capture "messageId" MessageId
+  :> "content"
+  :> StreamGet NoFraming OctetStream (SourceIO ByteString)
 
 type GetReplyMessageCount' a b = ChannelAuth
   :> "v2" :> "bot"

@@ -8,6 +8,7 @@
 module Line.Bot.ClientSpec (spec) where
 
 import           Control.Arrow                    (left)
+import           Control.Monad                    ((>=>))
 import           Control.Monad.Trans.Reader       (runReaderT)
 import           Data.Aeson                       (Value)
 import           Data.Aeson.QQ
@@ -37,7 +38,7 @@ type instance AuthServerData ChannelAuth = ChannelToken
 
 -- a dummy auth handler that returns the channel access token
 authHandler :: AuthHandler Request ChannelToken
-authHandler = mkAuthHandler $ \request -> do
+authHandler = mkAuthHandler $ \request ->
   case lookup hAuthorization (requestHeaders request) >>= B.stripPrefix "Bearer " of
     Nothing -> throwError $ err401 { errBody = "Bad" }
     Just t  -> return $ ChannelToken $ decodeUtf8 t
@@ -45,7 +46,9 @@ authHandler = mkAuthHandler $ \request -> do
 serverContext :: Context '[AuthHandler Request ChannelToken]
 serverContext = authHandler :. EmptyContext
 
-type API = GetProfile' Value :<|> GetGroupMemberProfile' Value
+type API = GetProfile' Value
+      :<|> GetGroupMemberProfile' Value
+      :<|> GetRoomMemberProfile' Value
 
 testProfile :: Value
 testProfile = [aesonQQ|
@@ -69,13 +72,18 @@ app :: Application
 app = serveWithContext (Proxy :: Proxy API) serverContext $
        (\_ _ -> return testProfile)
   :<|> (\_ _ _ -> return testProfile)
+  :<|> (\_ _ _ -> return testProfile)
 
 spec :: Spec
 spec = describe "Line client" $ do
-  it "should return user profile" $ do
-    withApplication (pure app) $ \port -> do
-      runLine (getProfile "1") port >>= \x -> x `shouldSatisfy` isRight
+  it "should return user profile" $
+    withApplication (pure app) $
+      runLine (getProfile "1") >=> (`shouldSatisfy` isRight)
 
-  it "should return group user profile" $ do
-    withApplication (pure app) $ \port -> do
-      runLine (getGroupMemberProfile "1" "1") port >>= \x -> x `shouldSatisfy` isRight
+  it "should return group user profile" $
+    withApplication (pure app) $
+      runLine (getGroupMemberProfile "1" "1") >=> (`shouldSatisfy` isRight)
+
+  it "should return room user profile" $
+    withApplication (pure app) $
+      runLine (getRoomMemberProfile "1" "1") >=> (`shouldSatisfy` isRight)

@@ -207,7 +207,7 @@ newtype ReplyToken = ReplyToken Text
 instance ToJSON ReplyToken
 instance FromJSON ReplyToken
 
-data LinkToken = LinkToken { linkToken :: Text }
+newtype LinkToken = LinkToken { linkToken :: Text }
   deriving (Eq, Show, Generic)
 
 instance FromJSON LinkToken
@@ -225,10 +225,10 @@ data PushMessageBody = forall a. PushMessageBody
   , messages :: [Message]
   }
 
-deriving instance Show (PushMessageBody)
+deriving instance Show PushMessageBody
 
 instance ToJSON PushMessageBody where
-  toJSON (PushMessageBody {..}) = object
+  toJSON PushMessageBody {..} = object
     [ "to"       .= to
     , "messages" .= messages
     ]
@@ -331,4 +331,4 @@ instance FromJSON MessageCount where
   parseJSON = withObject "MessageCount" $ \o -> do
     count  <- o .:  "success"
     status <- o .:  "status"
-    return $ MessageCount{..}
+    return MessageCount{..}

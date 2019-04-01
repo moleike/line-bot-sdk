@@ -8,7 +8,6 @@
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -77,7 +76,7 @@ instance (AllCTUnrender list a, HasServer api context, HasContextEntry context C
         let signatureH = lookup hSignature $ requestHeaders request
 
         if validateReqBody signatureH rawBody
-          then case (f rawBody) of
+          then case f rawBody of
              Left e  -> delayedFailFatal err400 { errBody = cs e }
              Right v -> return v
           else delayedFailFatal err401
@@ -89,7 +88,7 @@ instance (AllCTUnrender list a, HasServer api context, HasContextEntry context C
       hSignature = "X-Line-Signature"
 
       validateReqBody :: Maybe B.ByteString -> BL.ByteString -> Bool
-      validateReqBody digest body = maybe False (== SHA256.hmaclazy secret body) digest'
+      validateReqBody digest body = digest' == Just (SHA256.hmaclazy secret body)
         where
           digest' = Base64.decodeLenient <$> digest
           secret  = unChannelSecret channelSecret

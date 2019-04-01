@@ -58,7 +58,7 @@ testBody = [aesonQQ|
 |]
 
 spec :: Spec
-spec = with (pure app) $ do
+spec = with (pure app) $
   describe "Webhook server" $ do
 
     it "should return 200 with a signed request" $ do

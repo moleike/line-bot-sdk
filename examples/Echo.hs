@@ -1,8 +1,8 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE NamedFieldPuns    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns           #-}
+{-# LANGUAGE OverloadedStrings        #-}
+{-# LANGUAGE TypeOperators            #-}
 
 module Main (main) where
 
@@ -43,7 +43,7 @@ app token secret = serveWithContext api context server
   where
     api = Proxy :: Proxy API
     pc = Proxy :: Proxy '[ChannelSecret]
-    server = hoistServerWithContext api pc (flip runReaderT token) echoServer
+    server = hoistServerWithContext api pc (`runReaderT` token) echoServer
     context = secret :. EmptyContext
 
 main :: IO ()

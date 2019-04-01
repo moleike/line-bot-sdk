@@ -7,7 +7,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 -- |
 -- Module      : Line.Bot.Webhook.Events
 -- Copyright   : (c) Alexandre Moreno, 2019
@@ -41,7 +40,7 @@ import           Data.List             as L (stripPrefix)
 import           Data.Maybe
 import           Data.Scientific
 import           Data.String
-import           Data.Text             as T hiding (drop, stripPrefix, toLower)
+import           Data.Text             as T hiding (drop, toLower)
 import           Data.Time             (LocalTime, UTCTime)
 import           Data.Time.Calendar    (Day)
 import           Data.Time.Clock.POSIX
@@ -205,7 +204,7 @@ instance FromJSON Source where
       _       -> fail ("unknown source: " ++ messageType)
 
 
-data Members = Members { members :: [Source] }
+newtype Members = Members { members :: [Source] }
   deriving (Eq, Show, Generic)
 
 instance FromJSON Members
@@ -217,13 +216,12 @@ data PostbackDateTime =
   deriving (Eq, Show)
 
 instance FromJSON PostbackDateTime where
-  parseJSON = withObject "PostbackDateTime" $ \o -> do
-    dateTime <- asum
+  parseJSON = withObject "PostbackDateTime" $ \o ->
+    asum
       [ PostbackDay       <$> o .: "date"
       , PostbackLocalTime <$> o .: "datetime"
       , PostbackTimeOfDay <$> o .: "time"
       ]
-    return dateTime
 
 data Postback = Postback Text PostbackDateTime
   deriving (Eq, Show)
@@ -255,7 +253,7 @@ instance FromJSON Beacon where
     hwid      <- o .:  "hwid"
     eventType <- o .:  "type"
     dm        <- o .:? "dm"
-    return $ Beacon{..}
+    return Beacon{..}
 
 data AccountLinkResult = Ok | Failed
  deriving (Eq, Show, Generic)
@@ -293,4 +291,4 @@ instance FromJSON Things where
   parseJSON = withObject "Things" $ \o -> do
     deviceId  <- o .: "deviceId"
     eventType <- o .: "type"
-    return $ Things{..}
+    return Things{..}
