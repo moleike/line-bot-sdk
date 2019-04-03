@@ -66,7 +66,7 @@ withPort port app = do
   app $ mkClientEnv manager $ BaseUrl Http "localhost" port ""
 
 runLine :: Line a -> Port -> IO (Either ServantError a)
-runLine comp port = withPort port $ runClientM $ runReaderT comp "fake"
+runLine comp port = withPort port $ runClientM $ runReaderT comp (mkAuth "fake")
 
 app :: Application
 app = serveWithContext (Proxy :: Proxy API) serverContext $

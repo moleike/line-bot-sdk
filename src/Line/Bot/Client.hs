@@ -59,7 +59,7 @@ host = BaseUrl Https "api.line.me" 443 ""
 
 -- | @Line@ is the monad in which bot requests run. Contains the
 -- OAuth access token for a channel
-type Line = ReaderT ChannelToken ClientM
+type Line = ReaderT Auth ClientM
 
 withLineEnv :: (ClientEnv -> IO a) -> IO a
 withLineEnv app = do
@@ -72,78 +72,78 @@ runLine' comp = withLineEnv $ \env -> runClientM comp env
 
 -- | Runs a @Line@ computation with the given channel access token
 runLine :: Line a -> ChannelToken -> IO (Either ServantError a)
-runLine comp token = runLine' $ runReaderT comp token
+runLine comp = runLine' . runReaderT comp . mkAuth
 
 getProfile :: Id User -> Line Profile
-getProfile a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetProfile) (mkAuth token) a
+getProfile a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetProfile) auth a
 
 getGroupMemberProfile :: Id Group -> Id User -> Line Profile
-getGroupMemberProfile a b = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetGroupMemberProfile) (mkAuth token) a b
+getGroupMemberProfile a b = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetGroupMemberProfile) auth a b
 
 leaveGroup :: Id Group -> Line NoContent
-leaveGroup a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy LeaveGroup) (mkAuth token) a
+leaveGroup a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy LeaveGroup) auth a
 
 getRoomMemberProfile :: Id Room -> Id User -> Line Profile
-getRoomMemberProfile a b = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetRoomMemberProfile) (mkAuth token) a b
+getRoomMemberProfile a b = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetRoomMemberProfile) auth a b
 
 leaveRoom :: Id Room -> Line NoContent
-leaveRoom a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy LeaveRoom) (mkAuth token) a
+leaveRoom a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy LeaveRoom) auth a
 
 replyMessage' :: ReplyMessageBody -> Line NoContent
-replyMessage' a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy ReplyMessage) (mkAuth token) a
+replyMessage' a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy ReplyMessage) auth a
 
 replyMessage :: ReplyToken -> [Message] -> Line NoContent
 replyMessage a ms = replyMessage' (ReplyMessageBody a ms)
 
 pushMessage' :: PushMessageBody -> Line NoContent
-pushMessage' a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy PushMessage) (mkAuth token) a
+pushMessage' a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy PushMessage) auth a
 
 pushMessage :: Id a -> [Message] -> Line NoContent
 pushMessage a ms = pushMessage' (PushMessageBody a ms)
 
 multicastMessage' :: MulticastMessageBody -> Line NoContent
-multicastMessage' a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy MulticastMessage) (mkAuth token) a
+multicastMessage' a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy MulticastMessage) auth a
 
 multicastMessage :: [Id User] -> [Message] -> Line NoContent
 multicastMessage a ms = multicastMessage' (MulticastMessageBody a ms)
 
 -- | TODO: this should use a streaming library for constant memory usage over large data
 getContent :: MessageId -> Line ByteString
-getContent a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetContent) (mkAuth token) a
+getContent a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetContent) auth a
 
 getPushMessageCount' :: LineDate -> Line MessageCount
-getPushMessageCount' a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetPushMessageCount) (mkAuth token) a
+getPushMessageCount' a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetPushMessageCount) auth a
 
 getPushMessageCount :: Day -> Line (Maybe Int)
 getPushMessageCount = fmap count . getPushMessageCount' . LineDate
 
 getReplyMessageCount' :: LineDate -> Line MessageCount
-getReplyMessageCount' a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetReplyMessageCount) (mkAuth token) a
+getReplyMessageCount' a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetReplyMessageCount) auth a
 
 getReplyMessageCount :: Day -> Line (Maybe Int)
 getReplyMessageCount = fmap count . getReplyMessageCount' . LineDate
 
 getMulticastMessageCount' :: LineDate -> Line MessageCount
-getMulticastMessageCount' a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy GetMulticastMessageCount) (mkAuth token) a
+getMulticastMessageCount' a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetMulticastMessageCount) auth a
 
 getMulticastMessageCount :: Day -> Line (Maybe Int)
 getMulticastMessageCount = fmap count . getMulticastMessageCount' . LineDate
 
 issueLinkToken :: Id User -> Line LinkToken
-issueLinkToken a = ask >>= \token ->
-  lift $ client (Proxy :: Proxy IssueLinkToken) (mkAuth token) a
+issueLinkToken a = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy IssueLinkToken) auth a
 
 issueChannelToken :: ClientCredentials -> ClientM ShortLivedChannelToken
 issueChannelToken = client (Proxy :: Proxy IssueChannelToken)
