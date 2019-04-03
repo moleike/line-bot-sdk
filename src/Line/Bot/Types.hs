@@ -323,12 +323,12 @@ instance ToHttpApiData LineDate where
   toQueryParam = T.pack . show
 
 data MessageCount = MessageCount
-  { count  :: Int
+  { count  :: Maybe Int
   , status :: String
   } deriving (Eq, Show)
 
 instance FromJSON MessageCount where
   parseJSON = withObject "MessageCount" $ \o -> do
-    count  <- o .:  "success"
+    count  <- o .:? "success"
     status <- o .:  "status"
     return MessageCount{..}
