@@ -124,22 +124,22 @@ getPushMessageCount' :: LineDate -> Line MessageCount
 getPushMessageCount' a = ask >>= \token ->
   lift $ client (Proxy :: Proxy GetPushMessageCount) (mkAuth token) a
 
-getPushMessageCount :: Day -> Line MessageCount
-getPushMessageCount = getPushMessageCount' . LineDate
+getPushMessageCount :: Day -> Line (Maybe Int)
+getPushMessageCount = fmap count . getPushMessageCount' . LineDate
 
 getReplyMessageCount' :: LineDate -> Line MessageCount
 getReplyMessageCount' a = ask >>= \token ->
   lift $ client (Proxy :: Proxy GetReplyMessageCount) (mkAuth token) a
 
-getReplyMessageCount :: Day -> Line MessageCount
-getReplyMessageCount = getReplyMessageCount' . LineDate
+getReplyMessageCount :: Day -> Line (Maybe Int)
+getReplyMessageCount = fmap count . getReplyMessageCount' . LineDate
 
 getMulticastMessageCount' :: LineDate -> Line MessageCount
 getMulticastMessageCount' a = ask >>= \token ->
   lift $ client (Proxy :: Proxy GetMulticastMessageCount) (mkAuth token) a
 
-getMulticastMessageCount :: Day -> Line MessageCount
-getMulticastMessageCount = getMulticastMessageCount' . LineDate
+getMulticastMessageCount :: Day -> Line (Maybe Int)
+getMulticastMessageCount = fmap count . getMulticastMessageCount' . LineDate
 
 issueLinkToken :: Id User -> Line LinkToken
 issueLinkToken a = ask >>= \token ->
