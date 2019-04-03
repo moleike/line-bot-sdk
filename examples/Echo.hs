@@ -9,6 +9,7 @@ module Main (main) where
 import           Control.Monad                        (forM_)
 import           Control.Monad.IO.Class               (liftIO)
 import           Control.Monad.Trans.Reader           (ReaderT, ask, runReaderT)
+import           Data.Maybe                           (fromMaybe)
 import           Data.String                          (fromString)
 import           Line.Bot.Client                      (Line, replyMessage,
                                                        runLine)
@@ -18,7 +19,7 @@ import           Network.Wai.Handler.Warp             (run)
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           Servant
 import           Servant.Server                       (Context ((:.), EmptyContext))
-import           System.Environment                   (getEnv)
+import           System.Environment                   (getEnv, lookupEnv)
 
 type WebM = ReaderT ChannelToken Handler
 
@@ -50,5 +51,5 @@ main :: IO ()
 main = do
   token  <- fromString <$> getEnv "CHANNEL_TOKEN"
   secret <- fromString <$> getEnv "CHANNEL_SECRET"
-  port   <- read       <$> getEnv "PORT"
-  run port $ logStdout $ app token secret
+  port   <- fmap read  <$> lookupEnv "PORT"
+  run (fromMaybe 8000 port) $ logStdout $ app token secret
