@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
 
@@ -9,12 +10,15 @@ module Line.Bot.ClientSpec (spec) where
 
 import           Control.Arrow                    (left)
 import           Control.Monad                    ((>=>))
+import           Control.Monad.Free
 import           Control.Monad.Trans.Reader       (runReaderT)
 import           Data.Aeson                       (Value)
 import           Data.Aeson.QQ
 import           Data.ByteString                  as B (stripPrefix)
+import           Data.Foldable                    (toList)
 import           Data.Text
 import           Data.Text.Encoding
+import           Data.Time.Calendar               (fromGregorian)
 import           Line.Bot.Client                  hiding (runLine)
 import           Line.Bot.Internal.Auth
 import           Line.Bot.Internal.Endpoints
@@ -22,11 +26,13 @@ import           Line.Bot.Types
 import           Network.HTTP.Client              (defaultManagerSettings,
                                                    newManager)
 import           Network.HTTP.Types               (hAuthorization)
-import           Network.Wai                      (Request, requestHeaders)
+import           Network.Wai                      as Wai (Request,
+                                                          requestHeaders)
 import           Network.Wai.Handler.Warp         (Port, withApplication)
 import           Servant
 import           Servant.Client
-import           Servant.Client.Core.Reexport
+import           Servant.Client.Core
+import           Servant.Client.Free as F
 import           Servant.Server                   (Context (..))
 import           Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                                    mkAuthHandler)
@@ -37,13 +43,13 @@ import           Test.Hspec.Wai
 type instance AuthServerData ChannelAuth = ChannelToken
 
 -- a dummy auth handler that returns the channel access token
-authHandler :: AuthHandler Request ChannelToken
+authHandler :: AuthHandler Wai.Request ChannelToken
 authHandler = mkAuthHandler $ \request ->
-  case lookup hAuthorization (requestHeaders request) >>= B.stripPrefix "Bearer " of
+  case lookup hAuthorization (Wai.requestHeaders request) >>= B.stripPrefix "Bearer " of
     Nothing -> throwError $ err401 { errBody = "Bad" }
     Just t  -> return $ ChannelToken $ decodeUtf8 t
 
-serverContext :: Context '[AuthHandler Request ChannelToken]
+serverContext :: Context '[AuthHandler Wai.Request ChannelToken]
 serverContext = authHandler :. EmptyContext
 
 type API = GetProfile' Value
@@ -68,6 +74,15 @@ withPort port app = do
 runLine :: Line a -> Port -> IO (Either ServantError a)
 runLine comp port = withPort port $ runClientM $ runReaderT comp (mkAuth "fake")
 
+getReplyMessageCountF :: Auth -> LineDate -> Free ClientF MessageCount
+getReplyMessageCountF = F.client (Proxy :: Proxy GetReplyMessageCount)
+
+getPushMessageCountF :: Auth -> LineDate -> Free ClientF MessageCount
+getPushMessageCountF = F.client (Proxy :: Proxy GetPushMessageCount)
+
+getMulticastMessageCountF :: Auth -> LineDate -> Free ClientF MessageCount
+getMulticastMessageCountF = F.client (Proxy :: Proxy GetMulticastMessageCount)
+
 app :: Application
 app = serveWithContext (Proxy :: Proxy API) serverContext $
        (\_ _ -> return testProfile)
@@ -87,3 +102,16 @@ spec = describe "Line client" $ do
   it "should return room user profile" $
     withApplication (pure app) $
       runLine (getRoomMemberProfile "1" "1") >=> (`shouldSatisfy` isRight)
+
+  it "should send `date` query param for push message count" $ do
+    let Free (RunRequest Request{..} _) = getPushMessageCountF (mkAuth "fake") (LineDate $ fromGregorian 2019 4 7)
+    toList requestQueryString `shouldBe` [("date", Just "20190407")]
+
+  it "should send `date` query param for reply message count" $ do
+    let Free (RunRequest Request{..} _) = getReplyMessageCountF (mkAuth "fake") (LineDate $ fromGregorian 2019 4 7)
+    toList requestQueryString `shouldBe` [("date", Just "20190407")]
+
+  it "should send `date` query param for multicast message count" $ do
+    let Free (RunRequest Request{..} _) = getMulticastMessageCountF (mkAuth "fake") (LineDate $ fromGregorian 2019 4 7)
+    toList requestQueryString `shouldBe` [("date", Just "20190407")]
+
