@@ -147,7 +147,7 @@ type IssueLinkToken = IssueLinkToken' LinkToken
 
 type IssueChannelToken' a b =
   ReqBody '[FormUrlEncoded] a
-  :> "v2" :> "bot"
+  :> "v2"
   :> "oauth"
   :> "accessToken"
   :> Post '[JSON] b
@@ -156,7 +156,7 @@ type IssueChannelToken = IssueChannelToken' ClientCredentials ShortLivedChannelT
 
 type RevokeChannelToken' a =
   ReqBody '[FormUrlEncoded] a
-  :> "v2" :> "bot"
+  :> "v2"
   :> "oauth"
   :> "revoke"
   :> PostNoContent '[JSON] NoContent

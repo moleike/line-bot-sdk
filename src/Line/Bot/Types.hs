@@ -66,7 +66,8 @@ import           Web.FormUrlEncoded    (ToForm (..))
 newtype ChannelToken = ChannelToken { unChannelToken :: Text }
   deriving (Eq, Show, Generic)
 
-instance FromJSON ChannelToken
+instance FromJSON ChannelToken where
+  parseJSON = withText "ChannelToken" $ return . ChannelToken
 
 instance IsString ChannelToken where
   fromString s = ChannelToken (fromString s)

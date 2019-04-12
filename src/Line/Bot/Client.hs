@@ -145,8 +145,11 @@ issueLinkToken :: Id User -> Line LinkToken
 issueLinkToken a = ask >>= \auth ->
   lift $ client (Proxy :: Proxy IssueLinkToken) auth a
 
-issueChannelToken :: ClientCredentials -> ClientM ShortLivedChannelToken
-issueChannelToken = client (Proxy :: Proxy IssueChannelToken)
+issueChannelToken' :: ClientCredentials -> ClientM ShortLivedChannelToken
+issueChannelToken' = client (Proxy :: Proxy IssueChannelToken)
+
+issueChannelToken :: ChannelId -> ChannelSecret -> ClientM ShortLivedChannelToken
+issueChannelToken a b = issueChannelToken' $ ClientCredentials a b
 
 revokeChannelToken :: ChannelToken -> ClientM NoContent
 revokeChannelToken = client (Proxy :: Proxy RevokeChannelToken)
