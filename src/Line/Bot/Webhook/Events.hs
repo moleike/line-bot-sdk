@@ -18,6 +18,7 @@ module Line.Bot.Webhook.Events
   ( Events(..)
   , Event(..)
   , Message(..)
+  , ContentProvider(..)
   , EpochMilli(..)
   , Source(..)
   , Members(..)
