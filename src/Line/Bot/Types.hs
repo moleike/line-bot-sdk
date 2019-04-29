@@ -41,6 +41,7 @@ module Line.Bot.Types
   , ShortLivedChannelToken(..)
   , LineDate(..)
   , MessageCount(..)
+  , MessageQuota(..)
   )
 where
 
@@ -333,3 +334,8 @@ instance FromJSON MessageCount where
     count  <- o .:? "success"
     status <- o .:  "status"
     return MessageCount{..}
+
+newtype MessageQuota = MessageQuota { totalUsage :: Int }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON MessageQuota

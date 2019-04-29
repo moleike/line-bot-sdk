@@ -33,6 +33,7 @@ module Line.Bot.Client
   , getPushMessageCount
   , getReplyMessageCount
   , getMulticastMessageCount
+  , getMessageQuota
   -- ** Account Link
   , issueLinkToken
   -- ** OAuth
@@ -140,6 +141,13 @@ getMulticastMessageCount' a = ask >>= \auth ->
 
 getMulticastMessageCount :: Day -> Line (Maybe Int)
 getMulticastMessageCount = fmap count . getMulticastMessageCount' . LineDate
+
+getMessageQuota' :: Line MessageQuota
+getMessageQuota' = ask >>= \auth ->
+  lift $ client (Proxy :: Proxy GetMessageQuota) auth
+
+getMessageQuota :: Line Int
+getMessageQuota = fmap totalUsage getMessageQuota'
 
 issueLinkToken :: Id User -> Line LinkToken
 issueLinkToken a = ask >>= \auth ->

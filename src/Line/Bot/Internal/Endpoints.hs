@@ -136,6 +136,15 @@ type GetMulticastMessageCount' a b = ChannelAuth
 
 type GetMulticastMessageCount = GetMulticastMessageCount' LineDate MessageCount
 
+type GetMessageQuota' a = ChannelAuth
+  :> "v2" :> "bot"
+  :> "message"
+  :> "quota"
+  :> "consumption"
+  :> Get '[JSON] a
+
+type GetMessageQuota = GetMessageQuota' MessageQuota
+
 type IssueLinkToken' a = ChannelAuth
   :> "v2" :> "bot"
   :> "user"
