@@ -4,9 +4,13 @@
 {-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE ExtendedDefaultRules       #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+
 -- |
 -- Module      : Line.Bot.Webhook.Events
 -- Copyright   : (c) Alexandre Moreno, 2019
@@ -189,21 +193,24 @@ instance FromJSON EpochMilli where
              . toRational
              . (/ 1000)
 
-data Source =
-    SourceUser (Id User)
-  | SourceGroup (Id Group) (Maybe (Id User))
-  | SourceRoom (Id Room) (Maybe (Id User))
-  deriving (Eq, Show)
+data Source = forall a. Source (Id a)
+
+deriving instance Show Source
+
+instance Eq Source where
+  Source (UserId a) == Source (UserId b) = a == b
+  Source (GroupId a) == Source (GroupId b) = a == b
+  Source (RoomId a) == Source (RoomId b) = a == b
+  _ == _ = False
 
 instance FromJSON Source where
   parseJSON = withObject "Source" $ \o -> do
     messageType <- o .: "type"
     case messageType of
-      "user"  -> SourceUser  <$> o .: "userId"
-      "group" -> SourceGroup <$> o .: "groupId" <*> o .:? "userId"
-      "room"  -> SourceRoom  <$> o .: "roomId"  <*> o .:? "userId"
+      "user"  -> (Source . UserId)  <$> o .: "userId"
+      "group" -> (Source . GroupId) <$> o .: "groupId"
+      "room"  -> (Source . RoomId)  <$> o .: "roomId"
       _       -> fail ("unknown source: " ++ messageType)
-
 
 newtype Members = Members { members :: [Source] }
   deriving (Eq, Show, Generic)
