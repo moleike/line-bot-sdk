@@ -178,6 +178,10 @@ data Message =
                     , longitude  :: Double
                     , quickReply :: Maybe QuickReply
                     }
+  | MessageFlex     { altText    :: Text
+                    , contents   :: Value
+                    , quickReply :: Maybe QuickReply
+                    }
   deriving (Eq, Show, Generic)
 
 instance ToJSON Message where
