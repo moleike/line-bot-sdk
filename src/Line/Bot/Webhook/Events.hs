@@ -145,7 +145,7 @@ data Message =
                     , fileName  :: Text
                     }
   | MessageLocation { messageId :: MessageId
-                    , title     :: Text
+                    , title     :: Maybe Text
                     , address   :: Text
                     , latitude  :: Double
                     , longitude :: Double
@@ -198,10 +198,10 @@ data Source = forall a. Source (Id a)
 deriving instance Show Source
 
 instance Eq Source where
-  Source (UserId a) == Source (UserId b) = a == b
+  Source (UserId a)  == Source (UserId b)  = a == b
   Source (GroupId a) == Source (GroupId b) = a == b
-  Source (RoomId a) == Source (RoomId b) = a == b
-  _ == _ = False
+  Source (RoomId a)  == Source (RoomId b)  = a == b
+  _                  == _                  = False
 
 instance FromJSON Source where
   parseJSON = withObject "Source" $ \o -> do
