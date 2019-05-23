@@ -56,13 +56,13 @@ type API = GetProfile' Value
       :<|> GetGroupMemberProfile' Value
       :<|> GetRoomMemberProfile' Value
 
-getReplyMessageCountF :: Auth -> LineDate -> Free ClientF MessageCount
+getReplyMessageCountF :: LineDate -> Auth -> Free ClientF MessageCount
 getReplyMessageCountF = F.client (Proxy :: Proxy GetReplyMessageCount)
 
-getPushMessageCountF :: Auth -> LineDate -> Free ClientF MessageCount
+getPushMessageCountF :: LineDate -> Auth -> Free ClientF MessageCount
 getPushMessageCountF = F.client (Proxy :: Proxy GetPushMessageCount)
 
-getMulticastMessageCountF :: Auth -> LineDate -> Free ClientF MessageCount
+getMulticastMessageCountF :: LineDate -> Auth -> Free ClientF MessageCount
 getMulticastMessageCountF = F.client (Proxy :: Proxy GetMulticastMessageCount)
 
 testProfile :: Value
@@ -80,10 +80,11 @@ withPort port app = do
   manager <- newManager defaultManagerSettings
   app $ mkClientEnv manager $ BaseUrl Http "localhost" port ""
 
-auth = mkAuth "fake"
+token :: ChannelToken
+token = "fake"
 
 runLine :: Line a -> Port -> IO (Either ServantError a)
-runLine comp port = withPort port $ runClientM $ runReaderT comp auth
+runLine comp port = withPort port $ runClientM $ runReaderT comp token
 
 app :: Application
 app = serveWithContext (Proxy :: Proxy API) serverContext $
@@ -106,15 +107,15 @@ spec = describe "Line client" $ do
       runLine (getRoomMemberProfile "1" "1") >=> (`shouldSatisfy` isRight)
 
   it "should send `date` query param for push message count" $ do
-    let Free (RunRequest Request{..} _) = getPushMessageCountF auth date
+    let Free (RunRequest Request{..} _) = getPushMessageCountF date (mkAuth token)
     toList requestQueryString `shouldBe` [("date", Just "20190407")]
 
   it "should send `date` query param for reply message count" $ do
-    let Free (RunRequest Request{..} _) = getReplyMessageCountF auth date
+    let Free (RunRequest Request{..} _) = getReplyMessageCountF date (mkAuth token)
     toList requestQueryString `shouldBe` [("date", Just "20190407")]
 
   it "should send `date` query param for multicast message count" $ do
-    let Free (RunRequest Request{..} _) = getMulticastMessageCountF auth date
+    let Free (RunRequest Request{..} _) = getMulticastMessageCountF date (mkAuth token)
     toList requestQueryString `shouldBe` [("date", Just "20190407")]
   where
     date = LineDate $ fromGregorian 2019 4 7
