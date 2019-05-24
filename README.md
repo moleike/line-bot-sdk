@@ -66,3 +66,8 @@ See the
 
 Please report bugs via the
 [github issue tracker](https://github.com/moleike/line-bot-sdk/issues).
+
+## Acknowledgments
+
+Thanks to the authors of [servant-github](https://hackage.haskell.org/package/servant-github), for inspiration.
+
