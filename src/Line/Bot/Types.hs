@@ -42,6 +42,7 @@ module Line.Bot.Types
   , LineDate(..)
   , MessageCount(..)
   , MessageQuota(..)
+  , MemberIds(..)
   )
 where
 
@@ -343,3 +344,10 @@ newtype MessageQuota = MessageQuota { totalUsage :: Int }
   deriving (Eq, Show, Generic)
 
 instance FromJSON MessageQuota
+
+data MemberIds = MemberIds
+  { memberIds :: [Id User]
+  , next :: Maybe String
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON MemberIds

@@ -3,9 +3,11 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE TypeFamilies         #-}
+
 -- |
 -- Module      : Line.Bot.Client
 -- Copyright   : (c) Alexandre Moreno, 2019
@@ -23,9 +25,13 @@ module Line.Bot.Client
   -- ** Group
   , getGroupMemberProfile
   , leaveGroup
+  , getGroupMemberUserIds
+  , getGroupMemberUserIdsS
   -- ** Room
   , getRoomMemberProfile
   , leaveRoom
+  , getRoomMemberUserIds
+  , getRoomMemberUserIdsS
   -- ** Message
   , replyMessage
   , pushMessage
@@ -44,18 +50,20 @@ module Line.Bot.Client
 where
 
 import           Control.Monad.IO.Class
+import           Control.Monad.Reader
 import           Control.Monad.Trans.Class   (lift)
-import           Control.Monad.Trans.Reader  (ReaderT, ask, runReaderT)
-import           Data.ByteString.Lazy        (ByteString)
+import qualified Data.ByteString.Lazy        as LB
 import           Data.Proxy
 import           Data.Time.Calendar          (Day)
-import           Line.Bot.Internal.Auth
+import           Line.Bot.Internal.Auth      (Auth, mkAuth)
 import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client         (newManager)
 import           Network.HTTP.Client.TLS     (tlsManagerSettings)
-import           Servant.API
+import           Servant.API                 hiding (Stream)
 import           Servant.Client
+import           Streaming
+import qualified Streaming.Prelude           as S
 
 host :: BaseUrl
 host = BaseUrl Https "api.line.me" 443 ""
@@ -108,11 +116,43 @@ getGroupMemberProfile = line (Proxy :: Proxy GetGroupMemberProfile)
 leaveGroup :: Id Group -> Line NoContent
 leaveGroup = line (Proxy :: Proxy LeaveGroup)
 
+getGroupMemberUserIds' :: Id Group -> Maybe String -> Line MemberIds
+getGroupMemberUserIds' = line (Proxy :: Proxy GetGroupMemberUserIds)
+
+getGroupMemberUserIdsS :: Id Group -> Stream (Of (Id User)) Line ()
+getGroupMemberUserIdsS gid = go gid Nothing
+  where
+    go gid token = do
+      MemberIds{..} <- lift $ getGroupMemberUserIds' gid token
+      S.each memberIds
+      case next of
+        Nothing -> return ()
+        token'  -> go gid token'
+
+getGroupMemberUserIds :: Id Group -> Line [Id User]
+getGroupMemberUserIds = S.toList_ . getGroupMemberUserIdsS
+
 getRoomMemberProfile :: Id Room -> Id User -> Line Profile
 getRoomMemberProfile = line (Proxy :: Proxy GetRoomMemberProfile)
 
 leaveRoom :: Id Room -> Line NoContent
 leaveRoom = line (Proxy :: Proxy LeaveRoom)
+
+getRoomMemberUserIds' :: Id Room -> Maybe String -> Line MemberIds
+getRoomMemberUserIds' = line (Proxy :: Proxy GetRoomMemberUserIds)
+
+getRoomMemberUserIdsS :: Id Room -> Stream (Of (Id User)) Line ()
+getRoomMemberUserIdsS gid = go gid Nothing
+  where
+    go gid token = do
+      MemberIds{..} <- lift $ getRoomMemberUserIds' gid token
+      S.each memberIds
+      case next of
+        Nothing -> return ()
+        token'  -> go gid token'
+
+getRoomMemberUserIds :: Id Room -> Line [Id User]
+getRoomMemberUserIds = S.toList_ . getRoomMemberUserIdsS
 
 replyMessage' :: ReplyMessageBody -> Line NoContent
 replyMessage' = line (Proxy :: Proxy ReplyMessage)
@@ -132,8 +172,7 @@ multicastMessage' = line (Proxy :: Proxy MulticastMessage)
 multicastMessage :: [Id User] -> [Message] -> Line NoContent
 multicastMessage a ms = multicastMessage' (MulticastMessageBody a ms)
 
--- | TODO: this should use a streaming library for constant memory usage over large data
-getContent :: MessageId -> Line ByteString
+getContent :: MessageId -> Line LB.ByteString
 getContent = line (Proxy :: Proxy GetContent)
 
 getPushMessageCount' :: LineDate -> Line MessageCount
