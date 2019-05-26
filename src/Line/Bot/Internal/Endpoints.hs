@@ -113,6 +113,15 @@ type MulticastMessage' a =
 
 type MulticastMessage = MulticastMessage' MulticastMessageBody
 
+type BroadcastMessage' a =
+     "v2":> "bot" :> "message"
+  :> "broadcast"
+  :> ReqBody '[JSON] a
+  :> ChannelAuth
+  :> PostNoContent '[JSON] NoContent
+
+type BroadcastMessage = BroadcastMessage' BroadcastMessageBody
+
 type GetContent =
      "v2":> "bot" :> "message"
   :> Capture "messageId" MessageId
@@ -153,6 +162,15 @@ type GetMulticastMessageCount' a b =
   :> Get '[JSON] b
 
 type GetMulticastMessageCount = GetMulticastMessageCount' LineDate MessageCount
+
+type GetBroadcastMessageCount' a b =
+     "v2" :> "bot" :> "message" :> "delivery"
+  :> "broadcast"
+  :> QueryParam' '[Required, Strict] "date" a
+  :> ChannelAuth
+  :> Get '[JSON] b
+
+type GetBroadcastMessageCount = GetBroadcastMessageCount' LineDate MessageCount
 
 type GetMessageQuota' a =
      "v2":> "bot" :> "message" :> "quota"

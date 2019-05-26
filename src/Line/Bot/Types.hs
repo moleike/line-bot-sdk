@@ -33,6 +33,7 @@ module Line.Bot.Types
   , ReplyMessageBody(ReplyMessageBody)
   , PushMessageBody(PushMessageBody)
   , MulticastMessageBody(MulticastMessageBody)
+  , BroadcastMessageBody(BroadcastMessageBody)
   , Profile(..)
   , QuickReply(..)
   , QuickReplyButton(..)
@@ -247,6 +248,12 @@ data MulticastMessageBody = MulticastMessageBody
   deriving (Show, Generic)
 
 instance ToJSON MulticastMessageBody
+
+newtype BroadcastMessageBody = BroadcastMessageBody
+  { messages :: [Message] }
+  deriving (Show, Generic)
+
+instance ToJSON BroadcastMessageBody
 
 newtype QuickReply = QuickReply
   { items :: [QuickReplyButton] }

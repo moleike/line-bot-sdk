@@ -36,10 +36,12 @@ module Line.Bot.Client
   , replyMessage
   , pushMessage
   , multicastMessage
+  , broadcastMessage
   , getContent
   , getPushMessageCount
   , getReplyMessageCount
   , getMulticastMessageCount
+  , getBroadcastMessageCount
   , getMessageQuota
   -- ** Account Link
   , issueLinkToken
@@ -98,10 +100,10 @@ instance HasLine (LineAuth a) where
   addLineAuth comp = ask >>= \token -> lift $ comp (mkAuth token)
 
 instance HasLine (a -> LineAuth b) where
-  addLineAuth comp a = addLineAuth (comp a)
+  addLineAuth comp = addLineAuth . comp
 
 instance HasLine (a -> b -> LineAuth c) where
-  addLineAuth comp a = addLineAuth (comp a)
+  addLineAuth comp = addLineAuth . comp
 
 line :: (HasLine (Client ClientM api), HasClient ClientM api)
      => Proxy api -> AddLineAuth (Client ClientM api)
@@ -172,6 +174,12 @@ multicastMessage' = line (Proxy :: Proxy MulticastMessage)
 multicastMessage :: [Id User] -> [Message] -> Line NoContent
 multicastMessage a ms = multicastMessage' (MulticastMessageBody a ms)
 
+broadcastMessage' :: BroadcastMessageBody -> Line NoContent
+broadcastMessage' = line (Proxy :: Proxy BroadcastMessage)
+
+broadcastMessage :: [Message] -> Line NoContent
+broadcastMessage = broadcastMessage' . BroadcastMessageBody
+
 getContent :: MessageId -> Line LB.ByteString
 getContent = line (Proxy :: Proxy GetContent)
 
@@ -192,6 +200,12 @@ getMulticastMessageCount' = line (Proxy :: Proxy GetMulticastMessageCount)
 
 getMulticastMessageCount :: Day -> Line (Maybe Int)
 getMulticastMessageCount = fmap count . getMulticastMessageCount' . LineDate
+
+getBroadcastMessageCount' :: LineDate -> Line MessageCount
+getBroadcastMessageCount' = line (Proxy :: Proxy GetBroadcastMessageCount)
+
+getBroadcastMessageCount :: Day -> Line (Maybe Int)
+getBroadcastMessageCount = fmap count . getBroadcastMessageCount' . LineDate
 
 getMessageQuota' :: Line MessageQuota
 getMessageQuota' = line (Proxy :: Proxy GetMessageQuota)
