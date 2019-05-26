@@ -41,21 +41,24 @@ The documentation for the latest release is available on [Hackage][hackage].
 ## Usage
 
 ```haskell
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.String (fromString)
-import Line.Bot.Client (Line, getProfile, runLine)
-import Line.Bot.Types (Profile)
-import System.Environment (getEnv)
+import           Data.String        (fromString)
+import           Line.Bot.Client
+import           Line.Bot.Types
+import           System.Environment (getEnv)
 
-profile :: Line Profile
-profile = getProfile "U4af4980629..."
+getProfiles :: Id Room -> Line [Profile]
+getProfiles roomId = do
+  ids <- getRoomMemberUserIds roomId
+  sequence $ getRoomMemberProfile roomId <$> ids
 
 main = do
   token <- fromString <$> getEnv "CHANNEL_TOKEN"
-  result <- runLine profile token
+  result <- runLine (getProfiles "U4af4980629...") token
   case result of
-    Left err -> print err
+    Left err      -> print err
     Right profile -> print profile
 ```
 
