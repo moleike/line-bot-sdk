@@ -51,11 +51,11 @@ import           System.Environment (getEnv)
 
 getProfiles :: Id Room -> Line [Profile]
 getProfiles roomId = do
-  ids <- getRoomMemberUserIds roomId
-  sequence $ getRoomMemberProfile roomId <$> ids
+  userIds <- getRoomMemberUserIds roomId
+  sequence $ getRoomMemberProfile roomId <$> userIds
 
 main = do
-  token <- fromString <$> getEnv "CHANNEL_TOKEN"
+  token  <- fromString <$> getEnv "CHANNEL_TOKEN"
   result <- runLine (getProfiles "U4af4980629...") token
   case result of
     Left err      -> print err
