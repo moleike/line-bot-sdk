@@ -60,7 +60,7 @@ data Events = Events
   { destination :: Id User -- ^ User ID of a bot that should receive webhook events
   , events      :: [Event] -- ^ List of webhook event objects
   }
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 instance FromJSON Events
 
@@ -114,7 +114,7 @@ data Event =
                       , timestamp  :: EpochMilli
                       , things     :: Things
                       }
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 instance FromJSON Event where
   parseJSON = genericParseJSON defaultOptions
@@ -197,12 +197,6 @@ data Source = forall a. Source (Id a)
 
 deriving instance Show Source
 
-instance Eq Source where
-  Source (UserId a)  == Source (UserId b)  = a == b
-  Source (GroupId a) == Source (GroupId b) = a == b
-  Source (RoomId a)  == Source (RoomId b)  = a == b
-  _                  == _                  = False
-
 instance FromJSON Source where
   parseJSON = withObject "Source" $ \o -> do
     messageType <- o .: "type"
@@ -212,8 +206,15 @@ instance FromJSON Source where
       "room"  -> (Source . RoomId)  <$> o .: "roomId"
       _       -> fail ("unknown source: " ++ messageType)
 
+
+instance ToJSON Source where
+  toJSON (Source (UserId a))  = object ["type" .= "user", "userId" .= a]
+  toJSON (Source (GroupId a)) = object ["type" .= "group", "groupId" .= a]
+  toJSON (Source (RoomId a))  = object ["type" .= "room", "roomId" .= a]
+
+
 newtype Members = Members { members :: [Source] }
-  deriving (Eq, Show, Generic)
+  deriving (Show, Generic)
 
 instance FromJSON Members
 
