@@ -1,5 +1,5 @@
 name:                line-bot-sdk
-version:             0.5.0.1
+version:             0.5.0.2
 synopsis:            Haskell SDK for LINE Messaging API
 homepage:            https://github.com/moleike/line-bot-sdk#readme
 bug-reports:         https://github.com/moleike/line-bot-sdk/issues
