@@ -46,6 +46,7 @@ library
                      , errors               >= 2.3.0 && < 2.4
                      , http-client          >= 0.5.14 && < 0.7
                      , http-types           >= 0.12.2 && < 0.13
+                     , http-media
                      , http-api-data        >= 0.4 && < 0.5
                      , http-client-tls      >= 0.3.5 && < 0.4
                      , servant              >= 0.15 && < 0.16

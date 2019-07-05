@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments        #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -48,13 +49,22 @@ module Line.Bot.Client
   -- ** OAuth
   , issueChannelToken
   , revokeChannelToken
+  -- ** Rich menus
+  , createRichMenu
+  , deleteRichMenu
+  , getRichMenu
+  , uploadRichMenuImageJpg
+  , getRichMenuList
+  , setDefaultRichMenu
   )
 where
 
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Class   (lift)
+import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Lazy        as LB
+import           Data.Functor
 import           Data.Proxy
 import           Data.Time.Calendar          (Day)
 import           Line.Bot.Internal.Auth      (Auth, mkAuth)
@@ -90,7 +100,7 @@ runLine comp = runLine' . runReaderT comp
 type LineAuth a = Auth -> ClientM a
 
 type family AddLineAuth a :: * where
-  AddLineAuth (LineAuth a) = Line a
+  AddLineAuth (LineAuth x) = Line x
   AddLineAuth (a -> b) = a -> AddLineAuth b
 
 class HasLine a where
@@ -224,3 +234,28 @@ issueChannelToken a b = issueChannelToken' $ ClientCredentials a b
 
 revokeChannelToken :: ChannelToken -> ClientM NoContent
 revokeChannelToken = client (Proxy :: Proxy RevokeChannelToken)
+
+createRichMenu :: RichMenu -> Line RichMenuId
+createRichMenu = line (Proxy :: Proxy CreateRichMenu)
+
+getRichMenu' :: RichMenuId -> Line RichMenuResponse
+getRichMenu' = line (Proxy :: Proxy GetRichMenu)
+
+getRichMenu :: RichMenuId -> Line RichMenu
+getRichMenu = fmap richMenu . getRichMenu'
+
+uploadRichMenuImageJpg :: RichMenuId -> ByteString -> Line NoContent
+uploadRichMenuImageJpg = line (Proxy :: Proxy UploadRichMenuImageJpg)
+
+deleteRichMenu :: RichMenuId -> Line NoContent
+deleteRichMenu = line (Proxy :: Proxy DeleteRichMenu)
+
+getRichMenuList' :: Line RichMenuResponseList
+getRichMenuList' =  line (Proxy :: Proxy GetRichMenuList)
+
+getRichMenuList :: Line [(RichMenuId, RichMenu)]
+getRichMenuList = richmenus <$> getRichMenuList' <&> fmap \RichMenuResponse{..} ->
+  (RichMenuId richMenuId, richMenu)
+
+setDefaultRichMenu :: RichMenuId -> Line NoContent
+setDefaultRichMenu = line (Proxy :: Proxy SetDefaultRichMenu)

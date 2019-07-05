@@ -7,6 +7,7 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE KindSignatures            #-}
 {-# LANGUAGE LambdaCase                #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE NamedFieldPuns            #-}
 {-# LANGUAGE OverloadedLists           #-}
 {-# LANGUAGE OverloadedStrings         #-}
@@ -44,13 +45,25 @@ module Line.Bot.Types
   , MessageCount(..)
   , MessageQuota(..)
   , MemberIds(..)
+  , JPEG
+  , RichMenuSize(..)
+  , RichMenuBounds(..)
+  , RichMenuArea(..)
+  , RichMenu(..)
+  , RichMenuResponse(..)
+  , RichMenuId(..)
+  , RichMenuResponseList(..)
+  , RichMenuBulkLinkBody(..)
+  , RichMenuBulkUnlinkBody(..)
   )
 where
 
 import           Control.Arrow         ((>>>))
 import           Data.Aeson
 import           Data.Aeson.Types
-import qualified Data.ByteString.Char8 as B
+import           Data.ByteString       (ByteString)
+import qualified Data.ByteString.Char8 as C8
+import qualified Data.ByteString.Lazy  as LB
 import           Data.Char             (toLower)
 import           Data.List             as L (stripPrefix)
 import           Data.Maybe            (fromJust)
@@ -60,10 +73,13 @@ import           Data.Text             as T hiding (drop, toLower)
 import           Data.Text.Encoding
 import           Data.Time.Calendar    (Day)
 import           Data.Time.Format
+import           Data.Typeable
 import           GHC.Generics          hiding (to)
+import           Network.HTTP.Media    (MediaType, (//))
 import           Servant.API
 import           Text.Show
 import           Web.FormUrlEncoded    (ToForm (..))
+
 
 
 newtype ChannelToken = ChannelToken { unChannelToken :: Text }
@@ -82,10 +98,10 @@ instance ToHttpApiData ChannelToken where
 instance ToForm ChannelToken where
   toForm (ChannelToken t) = [ ("access_token", t) ]
 
-newtype ChannelSecret = ChannelSecret { unChannelSecret :: B.ByteString }
+newtype ChannelSecret = ChannelSecret { unChannelSecret :: C8.ByteString }
 
 instance IsString ChannelSecret where
-  fromString s = ChannelSecret (B.pack s)
+  fromString s = ChannelSecret (C8.pack s)
 
 instance ToHttpApiData ChannelSecret where
   toQueryParam = decodeUtf8 . unChannelSecret
@@ -296,6 +312,9 @@ data Action =
 instance ToJSON Action where
   toJSON = genericToJSON actionJSONOptions
 
+instance FromJSON Action where
+  parseJSON = genericParseJSON actionJSONOptions
+
 actionJSONOptions :: Options
 actionJSONOptions = defaultOptions
   { sumEncoding            = TaggedObject
@@ -354,7 +373,91 @@ instance FromJSON MessageQuota
 
 data MemberIds = MemberIds
   { memberIds :: [Id User]
-  , next :: Maybe String
+  , next      :: Maybe String
   } deriving (Eq, Show, Generic)
 
 instance FromJSON MemberIds
+
+data JPEG deriving Typeable
+
+instance Accept JPEG where
+  contentType _ = "image" // "jpeg"
+
+instance MimeRender JPEG ByteString where
+  mimeRender _ = LB.fromStrict
+
+data RichMenuSize = RichMenuSize
+  { width  :: Int
+  , height :: Int
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON RichMenuSize
+instance ToJSON RichMenuSize
+
+data RichMenuBounds = RichMenuBounds
+  { x      :: Int
+  , y      :: Int
+  , width  :: Int
+  , height :: Int
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON RichMenuBounds
+instance ToJSON RichMenuBounds
+
+data RichMenuArea = RichMenuArea
+  { bounds :: RichMenuBounds
+  , action :: Action
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON RichMenuArea
+instance ToJSON RichMenuArea
+
+data RichMenu = RichMenu
+  { size        :: RichMenuSize
+  , selected    :: Bool
+  , name        :: Text
+  , chatBarText :: Text
+  , areas       :: [RichMenuArea]
+  } deriving (Eq, Show, Generic)
+
+instance FromJSON RichMenu
+instance ToJSON RichMenu
+
+data RichMenuResponse = RichMenuResponse
+  { richMenuId :: Text
+  , richMenu   :: RichMenu
+  } deriving (Eq, Show)
+
+instance FromJSON RichMenuResponse where
+  parseJSON = withObject "RichMenuResponse" $ \o -> do
+    richMenuId <- o .: "richMenuId"
+    richMenu   <- parseJSON (Object o)
+    return RichMenuResponse{..}
+
+newtype RichMenuId = RichMenuId
+  { richMenuId :: Text }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RichMenuId
+
+instance ToHttpApiData RichMenuId where
+  toQueryParam (RichMenuId a) = a
+
+newtype RichMenuResponseList = RichMenuResponseList
+  { richmenus :: [RichMenuResponse] }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RichMenuResponseList
+
+data RichMenuBulkLinkBody = RichMenuBulkLinkBody
+  { richMenuId :: Text
+  , userIds    :: [Id User]
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON RichMenuBulkLinkBody
+
+newtype RichMenuBulkUnlinkBody = RichMenuBulkUnlinkBody
+  { userIds :: [Id User] }
+  deriving (Show, Eq, Generic)
+
+instance ToJSON RichMenuBulkUnlinkBody

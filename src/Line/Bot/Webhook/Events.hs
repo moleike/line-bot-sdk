@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE StandaloneDeriving         #-}
@@ -196,22 +195,21 @@ instance FromJSON EpochMilli where
 data Source = forall a. Source (Id a)
 
 deriving instance Show Source
+deriving instance Typeable Source
 
 instance FromJSON Source where
   parseJSON = withObject "Source" $ \o -> do
     messageType <- o .: "type"
     case messageType of
-      "user"  -> (Source . UserId)  <$> o .: "userId"
-      "group" -> (Source . GroupId) <$> o .: "groupId"
-      "room"  -> (Source . RoomId)  <$> o .: "roomId"
+      "user"  -> Source . UserId  <$> o .: "userId"
+      "group" -> Source . GroupId <$> o .: "groupId"
+      "room"  -> Source . RoomId  <$> o .: "roomId"
       _       -> fail ("unknown source: " ++ messageType)
-
 
 instance ToJSON Source where
   toJSON (Source (UserId a))  = object ["type" .= "user", "userId" .= a]
   toJSON (Source (GroupId a)) = object ["type" .= "group", "groupId" .= a]
   toJSON (Source (RoomId a))  = object ["type" .= "room", "roomId" .= a]
-
 
 newtype Members = Members { members :: [Source] }
   deriving (Show, Generic)

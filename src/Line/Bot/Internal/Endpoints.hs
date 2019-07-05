@@ -15,7 +15,8 @@
 
 module Line.Bot.Internal.Endpoints where
 
-import           Data.ByteString.Lazy (ByteString)
+import           Data.ByteString      (ByteString)
+import qualified Data.ByteString.Lazy as LB (ByteString)
 import           Line.Bot.Types
 import           Servant.API
 import           Servant.Client
@@ -88,7 +89,8 @@ type GetRoomMemberUserIds' a =
 type GetRoomMemberUserIds = GetRoomMemberUserIds' MemberIds
 
 type ReplyMessage' a =
-     "v2":> "bot" :> "message" :> "reply"
+     "v2":> "bot" :> "message"
+  :> "reply"
   :> ReqBody '[JSON] a
   :> ChannelAuth
   :> PostNoContent '[JSON] NoContent
@@ -127,7 +129,7 @@ type GetContent =
   :> Capture "messageId" MessageId
   :> "content"
   :> ChannelAuth
-  :> Get '[OctetStream] ByteString
+  :> Get '[OctetStream] LB.ByteString
 
 type GetContentStream =
      "v2":> "bot" :> "message"
@@ -201,6 +203,56 @@ type RevokeChannelToken' a =
      "v2" :> "oauth"
   :> "revoke"
   :> ReqBody '[FormUrlEncoded] a
-  :> PostNoContent '[JSON] NoContent
+  :> Post '[JSON] NoContent
 
 type RevokeChannelToken = RevokeChannelToken' ChannelToken
+
+type CreateRichMenu' a b =
+     "v2" :> "bot" :> "richmenu"
+  :> ReqBody '[JSON] a
+  :> ChannelAuth
+  :> PostNoContent '[JSON] b
+
+type CreateRichMenu = CreateRichMenu' RichMenu RichMenuId
+
+type DeleteRichMenu' a =
+     "v2" :> "bot" :> "richmenu"
+  :> Capture "richMenuId" a
+  :> ChannelAuth
+  :> Delete '[JSON] NoContent
+
+type DeleteRichMenu = DeleteRichMenu' RichMenuId
+
+type GetRichMenu' a b =
+     "v2" :> "bot" :> "richmenu"
+  :> Capture "richMenuId" a
+  :> ChannelAuth
+  :> Get '[JSON] b
+
+type GetRichMenu = GetRichMenu' RichMenuId RichMenuResponse
+
+type UploadRichMenuImageJpg' a b =
+     "v2" :> "bot" :> "richmenu"
+  :> Capture "richMenuId" a
+  :> "content"
+  :> ReqBody '[JPEG] b
+  :> ChannelAuth
+  :> Post '[JSON] NoContent
+
+type UploadRichMenuImageJpg = UploadRichMenuImageJpg' RichMenuId ByteString
+
+type GetRichMenuList' a =
+     "v2" :> "bot" :> "richmenu"
+  :> "list"
+  :> ChannelAuth
+  :> Get '[JSON] a
+
+type GetRichMenuList = GetRichMenuList' RichMenuResponseList
+
+type SetDefaultRichMenu' a =
+     "v2":> "bot" :> "user" :> "all" :> "richmenu"
+  :> Capture "richMenuId" a
+  :> ChannelAuth
+  :> PostNoContent '[JSON] NoContent
+
+type SetDefaultRichMenu = SetDefaultRichMenu' RichMenuId
