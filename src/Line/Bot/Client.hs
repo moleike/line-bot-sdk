@@ -6,6 +6,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
@@ -120,16 +121,16 @@ line :: (HasLine (Client ClientM api), HasClient ClientM api)
 line api = addLineAuth (client api)
 
 getProfile :: Id User -> Line Profile
-getProfile = line (Proxy :: Proxy GetProfile)
+getProfile = line (Proxy @GetProfile)
 
 getGroupMemberProfile :: Id Group -> Id User -> Line Profile
-getGroupMemberProfile = line (Proxy :: Proxy GetGroupMemberProfile)
+getGroupMemberProfile = line (Proxy @GetGroupMemberProfile)
 
 leaveGroup :: Id Group -> Line NoContent
-leaveGroup = line (Proxy :: Proxy LeaveGroup)
+leaveGroup = line (Proxy @LeaveGroup)
 
 getGroupMemberUserIds' :: Id Group -> Maybe String -> Line MemberIds
-getGroupMemberUserIds' = line (Proxy :: Proxy GetGroupMemberUserIds)
+getGroupMemberUserIds' = line (Proxy @GetGroupMemberUserIds)
 
 getGroupMemberUserIdsS :: Id Group -> Stream (Of (Id User)) Line ()
 getGroupMemberUserIdsS gid = go gid Nothing
@@ -145,13 +146,13 @@ getGroupMemberUserIds :: Id Group -> Line [Id User]
 getGroupMemberUserIds = S.toList_ . getGroupMemberUserIdsS
 
 getRoomMemberProfile :: Id Room -> Id User -> Line Profile
-getRoomMemberProfile = line (Proxy :: Proxy GetRoomMemberProfile)
+getRoomMemberProfile = line (Proxy @GetRoomMemberProfile)
 
 leaveRoom :: Id Room -> Line NoContent
-leaveRoom = line (Proxy :: Proxy LeaveRoom)
+leaveRoom = line (Proxy @LeaveRoom)
 
 getRoomMemberUserIds' :: Id Room -> Maybe String -> Line MemberIds
-getRoomMemberUserIds' = line (Proxy :: Proxy GetRoomMemberUserIds)
+getRoomMemberUserIds' = line (Proxy @GetRoomMemberUserIds)
 
 getRoomMemberUserIdsS :: Id Room -> Stream (Of (Id User)) Line ()
 getRoomMemberUserIdsS gid = go gid Nothing
@@ -167,95 +168,95 @@ getRoomMemberUserIds :: Id Room -> Line [Id User]
 getRoomMemberUserIds = S.toList_ . getRoomMemberUserIdsS
 
 replyMessage' :: ReplyMessageBody -> Line NoContent
-replyMessage' = line (Proxy :: Proxy ReplyMessage)
+replyMessage' = line (Proxy @ReplyMessage)
 
 replyMessage :: ReplyToken -> [Message] -> Line NoContent
 replyMessage a ms = replyMessage' (ReplyMessageBody a ms)
 
 pushMessage' :: PushMessageBody -> Line NoContent
-pushMessage' = line (Proxy :: Proxy PushMessage)
+pushMessage' = line (Proxy @PushMessage)
 
 pushMessage :: Id a -> [Message] -> Line NoContent
 pushMessage a ms = pushMessage' (PushMessageBody a ms)
 
 multicastMessage' :: MulticastMessageBody -> Line NoContent
-multicastMessage' = line (Proxy :: Proxy MulticastMessage)
+multicastMessage' = line (Proxy @MulticastMessage)
 
 multicastMessage :: [Id User] -> [Message] -> Line NoContent
 multicastMessage a ms = multicastMessage' (MulticastMessageBody a ms)
 
 broadcastMessage' :: BroadcastMessageBody -> Line NoContent
-broadcastMessage' = line (Proxy :: Proxy BroadcastMessage)
+broadcastMessage' = line (Proxy @BroadcastMessage)
 
 broadcastMessage :: [Message] -> Line NoContent
 broadcastMessage = broadcastMessage' . BroadcastMessageBody
 
 getContent :: MessageId -> Line LB.ByteString
-getContent = line (Proxy :: Proxy GetContent)
+getContent = line (Proxy @GetContent)
 
 getPushMessageCount' :: LineDate -> Line MessageCount
-getPushMessageCount' = line (Proxy :: Proxy GetPushMessageCount)
+getPushMessageCount' = line (Proxy @GetPushMessageCount)
 
 getPushMessageCount :: Day -> Line (Maybe Int)
 getPushMessageCount = fmap count . getPushMessageCount' . LineDate
 
 getReplyMessageCount' :: LineDate -> Line MessageCount
-getReplyMessageCount' = line (Proxy :: Proxy GetReplyMessageCount)
+getReplyMessageCount' = line (Proxy @GetReplyMessageCount)
 
 getReplyMessageCount :: Day -> Line (Maybe Int)
 getReplyMessageCount = fmap count . getReplyMessageCount' . LineDate
 
 getMulticastMessageCount' :: LineDate -> Line MessageCount
-getMulticastMessageCount' = line (Proxy :: Proxy GetMulticastMessageCount)
+getMulticastMessageCount' = line (Proxy @GetMulticastMessageCount)
 
 getMulticastMessageCount :: Day -> Line (Maybe Int)
 getMulticastMessageCount = fmap count . getMulticastMessageCount' . LineDate
 
 getBroadcastMessageCount' :: LineDate -> Line MessageCount
-getBroadcastMessageCount' = line (Proxy :: Proxy GetBroadcastMessageCount)
+getBroadcastMessageCount' = line (Proxy @GetBroadcastMessageCount)
 
 getBroadcastMessageCount :: Day -> Line (Maybe Int)
 getBroadcastMessageCount = fmap count . getBroadcastMessageCount' . LineDate
 
 getMessageQuota' :: Line MessageQuota
-getMessageQuota' = line (Proxy :: Proxy GetMessageQuota)
+getMessageQuota' = line (Proxy @GetMessageQuota)
 
 getMessageQuota :: Line Int
 getMessageQuota = fmap totalUsage getMessageQuota'
 
 issueLinkToken :: Id User -> Line LinkToken
-issueLinkToken = line (Proxy :: Proxy IssueLinkToken)
+issueLinkToken = line (Proxy @IssueLinkToken)
 
 issueChannelToken' :: ClientCredentials -> ClientM ShortLivedChannelToken
-issueChannelToken' = client (Proxy :: Proxy IssueChannelToken)
+issueChannelToken' = client (Proxy @IssueChannelToken)
 
 issueChannelToken :: ChannelId -> ChannelSecret -> ClientM ShortLivedChannelToken
 issueChannelToken a b = issueChannelToken' $ ClientCredentials a b
 
 revokeChannelToken :: ChannelToken -> ClientM NoContent
-revokeChannelToken = client (Proxy :: Proxy RevokeChannelToken)
+revokeChannelToken = client (Proxy @RevokeChannelToken)
 
 createRichMenu :: RichMenu -> Line RichMenuId
-createRichMenu = line (Proxy :: Proxy CreateRichMenu)
+createRichMenu = line (Proxy @CreateRichMenu)
 
 getRichMenu' :: RichMenuId -> Line RichMenuResponse
-getRichMenu' = line (Proxy :: Proxy GetRichMenu)
+getRichMenu' = line (Proxy @GetRichMenu)
 
 getRichMenu :: RichMenuId -> Line RichMenu
 getRichMenu = fmap richMenu . getRichMenu'
 
 uploadRichMenuImageJpg :: RichMenuId -> ByteString -> Line NoContent
-uploadRichMenuImageJpg = line (Proxy :: Proxy UploadRichMenuImageJpg)
+uploadRichMenuImageJpg = line (Proxy @UploadRichMenuImageJpg)
 
 deleteRichMenu :: RichMenuId -> Line NoContent
-deleteRichMenu = line (Proxy :: Proxy DeleteRichMenu)
+deleteRichMenu = line (Proxy @DeleteRichMenu)
 
 getRichMenuList' :: Line RichMenuResponseList
-getRichMenuList' =  line (Proxy :: Proxy GetRichMenuList)
+getRichMenuList' =  line (Proxy @GetRichMenuList)
 
 getRichMenuList :: Line [(RichMenuId, RichMenu)]
 getRichMenuList = richmenus <$> getRichMenuList' <&> fmap \RichMenuResponse{..} ->
   (RichMenuId richMenuId, richMenu)
 
 setDefaultRichMenu :: RichMenuId -> Line NoContent
-setDefaultRichMenu = line (Proxy :: Proxy SetDefaultRichMenu)
+setDefaultRichMenu = line (Proxy @SetDefaultRichMenu)
