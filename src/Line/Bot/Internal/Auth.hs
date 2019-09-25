@@ -8,14 +8,14 @@
 
 module Line.Bot.Internal.Auth where
 
-import           Line.Bot.Internal.Endpoints          (ChannelAuth)
-import           Line.Bot.Types                       (ChannelToken)
-import           Network.HTTP.Types                   (hAuthorization)
-import           Servant.API                          (AuthProtect)
-import           Servant.Client.Core.Internal.Auth    (AuthClientData,
-                                                       AuthenticatedRequest,
-                                                       mkAuthenticatedRequest)
-import           Servant.Client.Core.Internal.Request (Request, addHeader)
+import           Line.Bot.Internal.Endpoints (ChannelAuth)
+import           Line.Bot.Types              (ChannelToken)
+import           Network.HTTP.Types          (hAuthorization)
+import           Servant.API                 (AuthProtect)
+import           Servant.Client.Core.Auth    (AuthClientData,
+                                              AuthenticatedRequest,
+                                              mkAuthenticatedRequest)
+import           Servant.Client.Core.Request (Request, addHeader)
 
 type instance AuthClientData ChannelAuth = ChannelToken
 

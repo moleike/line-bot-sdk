@@ -91,11 +91,11 @@ withLineEnv app = do
   app $ mkClientEnv manager host
 
 -- | Executes a request in the LINE plaform (default)
-runLine' :: ClientM a -> IO (Either ServantError a)
+runLine' :: ClientM a -> IO (Either ClientError a)
 runLine' comp = withLineEnv $ \env -> runClientM comp env
 
 -- | Runs a @Line@ computation with the given channel access token
-runLine :: Line a -> ChannelToken -> IO (Either ServantError a)
+runLine :: Line a -> ChannelToken -> IO (Either ClientError a)
 runLine comp = runLine' . runReaderT comp
 
 type LineAuth a = Auth -> ClientM a

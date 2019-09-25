@@ -83,7 +83,7 @@ withPort port app = do
 token :: ChannelToken
 token = "fake"
 
-runLine :: Line a -> Port -> IO (Either ServantError a)
+runLine :: Line a -> Port -> IO (Either ClientError a)
 runLine comp port = withPort port $ runClientM $ runReaderT comp token
 
 app :: Application
