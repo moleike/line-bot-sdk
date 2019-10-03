@@ -1,8 +1,8 @@
-{-# LANGUAGE BlockArguments        #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -22,24 +22,25 @@ module Line.Bot.Client
   , runLine
   , runLine'
   , withLineEnv
+  , withLine
+  , withLine'
   -- ** Profile
   , getProfile
   -- ** Group
   , getGroupMemberProfile
   , leaveGroup
   , getGroupMemberUserIds
-  , getGroupMemberUserIdsS
   -- ** Room
   , getRoomMemberProfile
   , leaveRoom
   , getRoomMemberUserIds
-  , getRoomMemberUserIdsS
   -- ** Message
   , replyMessage
   , pushMessage
   , multicastMessage
   , broadcastMessage
   , getContent
+  , getContentS
   , getPushMessageCount
   , getReplyMessageCount
   , getMulticastMessageCount
@@ -60,12 +61,15 @@ module Line.Bot.Client
   )
 where
 
+import           Control.DeepSeq             (NFData)
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Class   (lift)
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Lazy        as LB
 import           Data.Functor
+import           Data.Maybe
+import           Data.Monoid
 import           Data.Proxy
 import           Data.Time.Calendar          (Day)
 import           Line.Bot.Internal.Auth      (Auth, mkAuth)
@@ -73,10 +77,8 @@ import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client         (newManager)
 import           Network.HTTP.Client.TLS     (tlsManagerSettings)
-import           Servant.API                 hiding (Stream)
-import           Servant.Client
-import           Streaming
-import qualified Streaming.Prelude           as S
+import           Servant.API
+import           Servant.Client.Streaming
 
 host :: BaseUrl
 host = BaseUrl Https "api.line.me" 443 ""
@@ -91,12 +93,20 @@ withLineEnv app = do
   app $ mkClientEnv manager host
 
 -- | Executes a request in the LINE plaform (default)
-runLine' :: ClientM a -> IO (Either ClientError a)
+runLine' :: NFData a => ClientM a -> IO (Either ClientError a)
 runLine' comp = withLineEnv $ \env -> runClientM comp env
 
--- | Runs a @Line@ computation with the given channel access token
-runLine :: Line a -> ChannelToken -> IO (Either ClientError a)
+-- | Runs a 'Line' action with the given 'ChannelToken'
+runLine :: NFData a => Line a -> ChannelToken -> IO (Either ClientError a)
 runLine comp = runLine' . runReaderT comp
+
+-- | Execute a request with a streaming response in the LINE platform
+withLine' :: ClientM a -> (Either ClientError a -> IO b) -> IO b
+withLine' comp k = withLineEnv $ \env -> withClientM comp env k
+
+-- | Runs a 'Line' action for streming endpoints.
+withLine :: Line a -> ChannelToken -> (Either ClientError a -> IO b) -> IO b
+withLine comp = withLine' . runReaderT comp
 
 type LineAuth a = Auth -> ClientM a
 
@@ -108,7 +118,7 @@ class HasLine a where
   addLineAuth :: a -> AddLineAuth a
 
 instance HasLine (LineAuth a) where
-  addLineAuth comp = ask >>= \token -> lift $ comp (mkAuth token)
+  addLineAuth comp = ask >>= lift . comp . mkAuth
 
 instance HasLine (a -> LineAuth b) where
   addLineAuth comp = addLineAuth . comp
@@ -117,8 +127,16 @@ instance HasLine (a -> b -> LineAuth c) where
   addLineAuth comp = addLineAuth . comp
 
 line :: (HasLine (Client ClientM api), HasClient ClientM api)
-     => Proxy api -> AddLineAuth (Client ClientM api)
-line api = addLineAuth (client api)
+     => Proxy api
+     -> AddLineAuth (Client ClientM api)
+line = addLineAuth . client
+
+unfoldMemberUserIds :: (Maybe String -> Line MemberIds) -> Line [Id User]
+unfoldMemberUserIds k = go Nothing where
+  go tok = do
+    MemberIds{next, memberIds = a} <- k tok
+    as <- maybe (return []) (\_ -> go next) next
+    return $ a ++ as
 
 getProfile :: Id User -> Line Profile
 getProfile = line (Proxy @GetProfile)
@@ -132,18 +150,8 @@ leaveGroup = line (Proxy @LeaveGroup)
 getGroupMemberUserIds' :: Id Group -> Maybe String -> Line MemberIds
 getGroupMemberUserIds' = line (Proxy @GetGroupMemberUserIds)
 
-getGroupMemberUserIdsS :: Id Group -> Stream (Of (Id User)) Line ()
-getGroupMemberUserIdsS gid = go gid Nothing
-  where
-    go gid token = do
-      MemberIds{..} <- lift $ getGroupMemberUserIds' gid token
-      S.each memberIds
-      case next of
-        Nothing -> return ()
-        token'  -> go gid token'
-
 getGroupMemberUserIds :: Id Group -> Line [Id User]
-getGroupMemberUserIds = S.toList_ . getGroupMemberUserIdsS
+getGroupMemberUserIds = unfoldMemberUserIds . getGroupMemberUserIds'
 
 getRoomMemberProfile :: Id Room -> Id User -> Line Profile
 getRoomMemberProfile = line (Proxy @GetRoomMemberProfile)
@@ -154,18 +162,8 @@ leaveRoom = line (Proxy @LeaveRoom)
 getRoomMemberUserIds' :: Id Room -> Maybe String -> Line MemberIds
 getRoomMemberUserIds' = line (Proxy @GetRoomMemberUserIds)
 
-getRoomMemberUserIdsS :: Id Room -> Stream (Of (Id User)) Line ()
-getRoomMemberUserIdsS gid = go gid Nothing
-  where
-    go gid token = do
-      MemberIds{..} <- lift $ getRoomMemberUserIds' gid token
-      S.each memberIds
-      case next of
-        Nothing -> return ()
-        token'  -> go gid token'
-
 getRoomMemberUserIds :: Id Room -> Line [Id User]
-getRoomMemberUserIds = S.toList_ . getRoomMemberUserIdsS
+getRoomMemberUserIds = unfoldMemberUserIds . getRoomMemberUserIds'
 
 replyMessage' :: ReplyMessageBody -> Line NoContent
 replyMessage' = line (Proxy @ReplyMessage)
@@ -193,6 +191,17 @@ broadcastMessage = broadcastMessage' . BroadcastMessageBody
 
 getContent :: MessageId -> Line LB.ByteString
 getContent = line (Proxy @GetContent)
+
+-- | This is an streaming version of 'getContent' meant to be used with coroutine
+-- libraries like @pipes@, @conduits@, @streaming@, etc. You need and instance
+-- of 'FromSourceIO', see e.g. @servant-conduit@.
+--
+-- Example:
+--
+-- > getContentC :: MessageId -> Line (ConduitT () ByteString IO ())
+-- > getContentC = fmap fromSourceIO . getContentS
+getContentS :: MessageId -> Line (SourceIO ByteString)
+getContentS = line (Proxy @GetContentStream)
 
 getPushMessageCount' :: LineDate -> Line MessageCount
 getPushMessageCount' = line (Proxy @GetPushMessageCount)
@@ -255,8 +264,8 @@ getRichMenuList' :: Line RichMenuResponseList
 getRichMenuList' =  line (Proxy @GetRichMenuList)
 
 getRichMenuList :: Line [(RichMenuId, RichMenu)]
-getRichMenuList = richmenus <$> getRichMenuList' <&> fmap \RichMenuResponse{..} ->
-  (RichMenuId richMenuId, richMenu)
+getRichMenuList = richmenus <$> getRichMenuList' <&> fmap f where
+  f RichMenuResponse{..} = (RichMenuId richMenuId, richMenu)
 
 setDefaultRichMenu :: RichMenuId -> Line NoContent
 setDefaultRichMenu = line (Proxy @SetDefaultRichMenu)

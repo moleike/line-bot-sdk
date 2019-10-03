@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE DeriveAnyClass            #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
@@ -59,6 +60,7 @@ module Line.Bot.Types
 where
 
 import           Control.Arrow         ((>>>))
+import           Control.DeepSeq
 import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.ByteString       (ByteString)
@@ -83,7 +85,7 @@ import           Web.FormUrlEncoded    (ToForm (..))
 
 
 newtype ChannelToken = ChannelToken { unChannelToken :: Text }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON ChannelToken where
   parseJSON = withText "ChannelToken" $ return . ChannelToken
@@ -107,7 +109,7 @@ instance ToHttpApiData ChannelSecret where
   toQueryParam = decodeUtf8 . unChannelSecret
 
 newtype ChannelId = ChannelId { unChannelId :: Text }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance IsString ChannelId where
   fromString s = ChannelId (fromString s)
@@ -125,6 +127,11 @@ data Id :: ChatType -> * where
 
 deriving instance Eq (Id a)
 deriving instance Show (Id a)
+
+instance NFData (Id a) where
+    rnf (UserId a)  = rnf a
+    rnf (GroupId a) = rnf a
+    rnf (RoomId a)  = rnf a
 
 instance ToHttpApiData (Id a) where
   toQueryParam = \case
@@ -165,7 +172,7 @@ instance FromJSON (Id Room) where
 type MessageId = Text
 
 newtype URL = URL Text
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, NFData)
 
 instance ToJSON URL
 instance FromJSON URL
@@ -200,7 +207,7 @@ data Message =
                     , contents   :: Value
                     , quickReply :: Maybe QuickReply
                     }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON Message where
   toJSON = genericToJSON messageJSONOptions
@@ -217,22 +224,22 @@ messageJSONOptions = defaultOptions
 
 data Profile = Profile
   { displayName   :: Text
-  , userId        :: Id User
+  , userId        :: Text
   , pictureUrl    :: URL
   , statusMessage :: Maybe Text
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON Profile
 
 newtype ReplyToken = ReplyToken Text
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON ReplyToken
 instance FromJSON ReplyToken
 
 newtype LinkToken = LinkToken { linkToken :: Text }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON LinkToken
 
@@ -240,7 +247,7 @@ data ReplyMessageBody = ReplyMessageBody
   { replyToken :: ReplyToken
   , messages   :: [Message]
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, NFData)
 
 instance ToJSON ReplyMessageBody
 
@@ -261,19 +268,19 @@ data MulticastMessageBody = MulticastMessageBody
   { to       :: [Id User]
   , messages :: [Message]
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, NFData)
 
 instance ToJSON MulticastMessageBody
 
 newtype BroadcastMessageBody = BroadcastMessageBody
   { messages :: [Message] }
-  deriving (Show, Generic)
+  deriving (Show, Generic, NFData)
 
 instance ToJSON BroadcastMessageBody
 
 newtype QuickReply = QuickReply
   { items :: [QuickReplyButton] }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON QuickReply
 
@@ -281,7 +288,7 @@ data QuickReplyButton = QuickReplyButton
   { imageUrl :: Maybe URL
   , action   :: Action
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON QuickReplyButton where
   toJSON QuickReplyButton{..} = object
@@ -307,7 +314,7 @@ data Action =
                      }
   | ActionLocation   { label :: Text
                      }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON Action where
   toJSON = genericToJSON actionJSONOptions
@@ -341,7 +348,7 @@ instance ToForm ClientCredentials where
 data ShortLivedChannelToken = ShortLivedChannelToken
   { accessToken :: ChannelToken
   , expiresIn   :: Int
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON ShortLivedChannelToken where
   parseJSON = genericParseJSON defaultOptions
@@ -367,14 +374,14 @@ instance FromJSON MessageCount where
     return MessageCount{..}
 
 newtype MessageQuota = MessageQuota { totalUsage :: Int }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON MessageQuota
 
 data MemberIds = MemberIds
   { memberIds :: [Id User]
   , next      :: Maybe String
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON MemberIds
 
@@ -389,7 +396,7 @@ instance MimeRender JPEG ByteString where
 data RichMenuSize = RichMenuSize
   { width  :: Int
   , height :: Int
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON RichMenuSize
 instance ToJSON RichMenuSize
@@ -399,7 +406,7 @@ data RichMenuBounds = RichMenuBounds
   , y      :: Int
   , width  :: Int
   , height :: Int
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON RichMenuBounds
 instance ToJSON RichMenuBounds
@@ -407,7 +414,7 @@ instance ToJSON RichMenuBounds
 data RichMenuArea = RichMenuArea
   { bounds :: RichMenuBounds
   , action :: Action
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON RichMenuArea
 instance ToJSON RichMenuArea
@@ -418,7 +425,7 @@ data RichMenu = RichMenu
   , name        :: Text
   , chatBarText :: Text
   , areas       :: [RichMenuArea]
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, NFData)
 
 instance FromJSON RichMenu
 instance ToJSON RichMenu
@@ -426,7 +433,8 @@ instance ToJSON RichMenu
 data RichMenuResponse = RichMenuResponse
   { richMenuId :: Text
   , richMenu   :: RichMenu
-  } deriving (Eq, Show)
+  }
+  deriving (Show, Eq, Generic, NFData)
 
 instance FromJSON RichMenuResponse where
   parseJSON = withObject "RichMenuResponse" $ \o -> do
@@ -436,7 +444,7 @@ instance FromJSON RichMenuResponse where
 
 newtype RichMenuId = RichMenuId
   { richMenuId :: Text }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, NFData)
 
 instance FromJSON RichMenuId
 
@@ -445,19 +453,19 @@ instance ToHttpApiData RichMenuId where
 
 newtype RichMenuResponseList = RichMenuResponseList
   { richmenus :: [RichMenuResponse] }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, NFData)
 
 instance FromJSON RichMenuResponseList
 
 data RichMenuBulkLinkBody = RichMenuBulkLinkBody
   { richMenuId :: Text
   , userIds    :: [Id User]
-  } deriving (Show, Eq, Generic)
+  } deriving (Show, Eq, Generic, NFData)
 
 instance ToJSON RichMenuBulkLinkBody
 
 newtype RichMenuBulkUnlinkBody = RichMenuBulkUnlinkBody
   { userIds :: [Id User] }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, NFData)
 
 instance ToJSON RichMenuBulkUnlinkBody

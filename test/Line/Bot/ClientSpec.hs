@@ -9,6 +9,7 @@
 module Line.Bot.ClientSpec (spec) where
 
 import           Control.Arrow                    (left)
+import           Control.DeepSeq                  (NFData)
 import           Control.Monad                    ((>=>))
 import           Control.Monad.Free
 import           Control.Monad.Trans.Reader       (runReaderT)
@@ -30,9 +31,9 @@ import           Network.Wai                      as Wai (Request,
                                                           requestHeaders)
 import           Network.Wai.Handler.Warp         (Port, withApplication)
 import           Servant
-import           Servant.Client
 import           Servant.Client.Core
 import           Servant.Client.Free              as F
+import           Servant.Client.Streaming
 import           Servant.Server                   (Context (..))
 import           Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                                    mkAuthHandler)
@@ -83,7 +84,7 @@ withPort port app = do
 token :: ChannelToken
 token = "fake"
 
-runLine :: Line a -> Port -> IO (Either ClientError a)
+runLine :: NFData a => Line a -> Port -> IO (Either ClientError a)
 runLine comp port = withPort port $ runClientM $ runReaderT comp token
 
 app :: Application

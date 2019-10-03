@@ -55,7 +55,8 @@ library
                      , servant-server       >= 0.16.2 && < 0.17
                      , wai                  >= 3.2.2 && < 3.3
                      , mtl                  >= 2.2.2 && < 2.3
-                     , streaming            >= 0.2 && < 0.3
+                     , deepseq              >= 1.4.2.0  && < 1.5
+
 
   default-language:    Haskell2010
 
@@ -102,6 +103,7 @@ test-suite line-bot-sdk-test
                      , warp
                      , free
                      , time 
+                     , deepseq
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
