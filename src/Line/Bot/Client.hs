@@ -20,10 +20,8 @@
 module Line.Bot.Client
   ( Line
   , runLine
-  , runLine'
-  , withLineEnv
   , withLine
-  , withLine'
+  , withLineEnv
   -- ** Profile
   , getProfile
   -- ** Group
@@ -87,24 +85,25 @@ host = BaseUrl Https "api.line.me" 443 ""
 -- OAuth access token for a channel
 type Line = ReaderT ChannelToken ClientM
 
+-- | Perform a request using LINE 'ClientEnv'
+--
+-- > withLineEnv $ \env -> runClientM comp env
 withLineEnv :: (ClientEnv -> IO a) -> IO a
 withLineEnv app = do
   manager <- newManager tlsManagerSettings
   app $ mkClientEnv manager host
 
--- | Executes a request in the LINE plaform (default)
 runLine' :: NFData a => ClientM a -> IO (Either ClientError a)
 runLine' comp = withLineEnv $ \env -> runClientM comp env
 
--- | Runs a 'Line' action with the given 'ChannelToken'
+-- | Executes a request in the LINE plaform with the given 'ChannelToken'
 runLine :: NFData a => Line a -> ChannelToken -> IO (Either ClientError a)
 runLine comp = runLine' . runReaderT comp
 
--- | Execute a request with a streaming response in the LINE platform
 withLine' :: ClientM a -> (Either ClientError a -> IO b) -> IO b
 withLine' comp k = withLineEnv $ \env -> withClientM comp env k
 
--- | Runs a 'Line' action for streming endpoints.
+-- | Execute a request with a streaming response in the LINE platform
 withLine :: Line a -> ChannelToken -> (Either ClientError a -> IO b) -> IO b
 withLine comp = withLine' . runReaderT comp
 
