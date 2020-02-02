@@ -78,8 +78,11 @@ import           Network.HTTP.Client.TLS     (tlsManagerSettings)
 import           Servant.API
 import           Servant.Client.Streaming
 
-host :: BaseUrl
-host = BaseUrl Https "api.line.me" 443 ""
+defaultEndpoint :: BaseUrl
+defaultEndpoint = BaseUrl Https "api.line.me" 443 ""
+
+blobEndpoint :: BaseUrl
+blobEndpoint = BaseUrl Https "api-data.line.me" 443 ""
 
 -- | @Line@ is the monad in which bot requests run. Contains the
 -- OAuth access token for a channel
@@ -91,7 +94,7 @@ type Line = ReaderT ChannelToken ClientM
 withLineEnv :: (ClientEnv -> IO a) -> IO a
 withLineEnv app = do
   manager <- newManager tlsManagerSettings
-  app $ mkClientEnv manager host
+  app $ mkClientEnv manager defaultEndpoint
 
 runLine' :: NFData a => ClientM a -> IO (Either ClientError a)
 runLine' comp = withLineEnv $ \env -> runClientM comp env
@@ -107,10 +110,13 @@ withLine' comp k = withLineEnv $ \env -> withClientM comp env k
 withLine :: Line a -> ChannelToken -> (Either ClientError a -> IO b) -> IO b
 withLine comp = withLine' . runReaderT comp
 
+withHost :: MonadReader ClientEnv m => BaseUrl -> m a -> m a
+withHost baseUrl = local (\env -> env { baseUrl = baseUrl })
+
 type LineAuth a = Auth -> ClientM a
 
 type family AddLineAuth a :: * where
-  AddLineAuth (LineAuth x) = Line x
+  AddLineAuth (LineAuth a) = Line a
   AddLineAuth (a -> b) = a -> AddLineAuth b
 
 class HasLine a where
@@ -188,8 +194,14 @@ broadcastMessage' = line (Proxy @BroadcastMessage)
 broadcastMessage :: [Message] -> Line NoContent
 broadcastMessage = broadcastMessage' . BroadcastMessageBody
 
+getContent' :: MessageId -> Auth -> ClientM LB.ByteString
+getContent' = client (Proxy @GetContent)
+
 getContent :: MessageId -> Line LB.ByteString
-getContent = line (Proxy @GetContent)
+getContent  a = ask >>= lift . withHost blobEndpoint . getContent' a . mkAuth
+
+getContentS' :: MessageId -> Auth -> ClientM (SourceIO ByteString)
+getContentS' = client (Proxy @GetContentStream)
 
 -- | This is an streaming version of 'getContent' meant to be used with coroutine
 -- libraries like @pipes@, @conduits@, @streaming@, etc. You need and instance
@@ -200,7 +212,7 @@ getContent = line (Proxy @GetContent)
 -- > getContentC :: MessageId -> Line (ConduitT () ByteString IO ())
 -- > getContentC = fmap fromSourceIO . getContentS
 getContentS :: MessageId -> Line (SourceIO ByteString)
-getContentS = line (Proxy @GetContentStream)
+getContentS  a = ask >>= lift . withHost blobEndpoint . getContentS' a . mkAuth
 
 getPushMessageCount' :: LineDate -> Line MessageCount
 getPushMessageCount' = line (Proxy @GetPushMessageCount)
@@ -253,8 +265,11 @@ getRichMenu' = line (Proxy @GetRichMenu)
 getRichMenu :: RichMenuId -> Line RichMenu
 getRichMenu = fmap richMenu . getRichMenu'
 
+uploadRichMenuImageJpg' :: RichMenuId -> ByteString -> Auth -> ClientM NoContent
+uploadRichMenuImageJpg' = client (Proxy @UploadRichMenuImageJpg)
+
 uploadRichMenuImageJpg :: RichMenuId -> ByteString -> Line NoContent
-uploadRichMenuImageJpg = line (Proxy @UploadRichMenuImageJpg)
+uploadRichMenuImageJpg a b = ask >>= lift . withHost blobEndpoint . uploadRichMenuImageJpg' a b . mkAuth
 
 deleteRichMenu :: RichMenuId -> Line NoContent
 deleteRichMenu = line (Proxy @DeleteRichMenu)
