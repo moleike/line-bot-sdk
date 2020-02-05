@@ -7,10 +7,12 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+
 -- |
 -- Module      : Line.Bot.Webhook
 -- Copyright   : (c) Alexandre Moreno, 2019
@@ -20,12 +22,14 @@
 
 module Line.Bot.Webhook
   ( Webhook
+  , webhook
   , LineReqBody
   , module Events
   )
 where
 
-import           Control.Monad.IO.Class   (liftIO)
+import           Control.Monad            (forM_, (>>))
+import           Control.Monad.IO.Class   (MonadIO, liftIO)
 import qualified Crypto.Hash.SHA256       as SHA256
 import           Data.Aeson
 import           Data.Aeson.Types
@@ -47,6 +51,15 @@ import           Servant.Server.Internal
 
 -- | This type alias just specifies how webhook requests should be handled
 type Webhook = LineReqBody '[JSON] Events :> Post '[JSON] NoContent
+
+-- | Helper function that takes a handler to process 'Webhook' events:
+--
+-- > server :: Server Webhook
+-- > server = webhook $ \case
+-- >   EventMessage { message, replyToken } = handleMessage message replyToken
+-- >   _                                    = return ()
+webhook :: MonadIO m => (Event -> m a) -> Events -> m NoContent
+webhook k Events{..} = forM_ events k >> return NoContent
 
 -- | A Servant combinator that extracts the request body as a value of type a
 -- and performs signature valiadation
