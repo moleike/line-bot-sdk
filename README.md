@@ -6,7 +6,7 @@ Features:
 
 * Servant combinator `LineReqBody` for validation of request signatures using the channel secret. This is required to distinguish legitimate requests sent by LINE from malicious requests
 
-* Bindings for (most) of the Messaging APIs
+* Bindings for (most of) the Messaging APIs
 
 ## Installation
 
@@ -34,9 +34,10 @@ stack install # Alternatively, `cabal install`
 
 ## Documentation
 
-The documentation for the latest release is available on [Hackage][hackage]. 
+See the official API documentation for more information.
 
-[hackage]: http://hackage.haskell.org/package/line-bot-sdk "Hackage"
+- English: https://developers.line.biz/en/docs/messaging-api/overview/
+- Japanese: https://developers.line.biz/ja/docs/messaging-api/overview/
 
 ## Usage
 
