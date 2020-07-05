@@ -5,10 +5,10 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module Line.Bot.ClientSpec (spec) where
 
-import           Control.Arrow                    (left)
 import           Control.DeepSeq                  (NFData)
 import           Control.Monad                    ((>=>))
 import           Control.Monad.Free
@@ -17,15 +17,13 @@ import           Data.Aeson                       (Value)
 import           Data.Aeson.QQ
 import           Data.ByteString                  as B (stripPrefix)
 import           Data.Foldable                    (toList)
-import           Data.Text
 import           Data.Text.Encoding
 import           Data.Time.Calendar               (fromGregorian)
 import           Line.Bot.Client                  hiding (runLine)
-import           Line.Bot.Internal.Auth
 import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
-import           Network.HTTP.Client              (defaultManagerSettings,
-                                                   newManager)
+import           Network.HTTP.Client              (newManager)
+import           Network.HTTP.Client.TLS     (tlsManagerSettings)
 import           Network.HTTP.Types               (hAuthorization)
 import           Network.Wai                      as Wai (Request,
                                                           requestHeaders)
@@ -34,13 +32,12 @@ import           Servant
 import           Servant.Client.Core
 import           Servant.Client.Free              as F
 import           Servant.Client.Streaming
-import           Servant.Server                   (Context (..))
 import           Servant.Server.Experimental.Auth (AuthHandler, AuthServerData,
                                                    mkAuthHandler)
 import           Test.Hspec
 import           Test.Hspec.Expectations.Contrib
-import           Test.Hspec.Wai
 
+type ChannelAuth = AuthProtect "channel-token"
 type instance AuthServerData ChannelAuth = ChannelToken
 
 -- a dummy auth handler that returns the channel access token
@@ -57,14 +54,14 @@ type API = GetProfile' Value
       :<|> GetGroupMemberProfile' Value
       :<|> GetRoomMemberProfile' Value
 
-getReplyMessageCountF :: LineDate -> Auth -> Free ClientF MessageCount
-getReplyMessageCountF = F.client (Proxy :: Proxy GetReplyMessageCount)
+getReplyMessageCountF :: LineDate -> Free ClientF MessageCount
+getReplyMessageCountF = F.client (Proxy @GetReplyMessageCount)
 
-getPushMessageCountF :: LineDate -> Auth -> Free ClientF MessageCount
-getPushMessageCountF = F.client (Proxy :: Proxy GetPushMessageCount)
+getPushMessageCountF :: LineDate -> Free ClientF MessageCount
+getPushMessageCountF = F.client (Proxy @GetPushMessageCount)
 
-getMulticastMessageCountF :: LineDate -> Auth -> Free ClientF MessageCount
-getMulticastMessageCountF = F.client (Proxy :: Proxy GetMulticastMessageCount)
+getMulticastMessageCountF :: LineDate -> Free ClientF MessageCount
+getMulticastMessageCountF = F.client (Proxy @GetMulticastMessageCount)
 
 testProfile :: Value
 testProfile = [aesonQQ|
@@ -78,20 +75,20 @@ testProfile = [aesonQQ|
 
 withPort :: Port -> (ClientEnv -> IO a) -> IO a
 withPort port app = do
-  manager <- newManager defaultManagerSettings
+  manager <- newManager tlsManagerSettings
   app $ mkClientEnv manager $ BaseUrl Http "localhost" port ""
 
 token :: ChannelToken
 token = "fake"
 
 runLine :: NFData a => Line a -> Port -> IO (Either ClientError a)
-runLine comp port = withPort port $ runClientM $ runReaderT comp token
+runLine comp port = withPort port $ \env -> runClientM (runReaderT comp token) env
 
 app :: Application
 app = serveWithContext (Proxy :: Proxy API) serverContext $
-       (\_ _ -> return testProfile)
-  :<|> (\_ _ _ -> return testProfile)
-  :<|> (\_ _ _ -> return testProfile)
+       (\_   -> return testProfile)
+  :<|> (\_ _ -> return testProfile)
+  :<|> (\_ _ -> return testProfile)
 
 spec :: Spec
 spec = describe "Line client" $ do
@@ -108,15 +105,15 @@ spec = describe "Line client" $ do
       runLine (getRoomMemberProfile "1" "1") >=> (`shouldSatisfy` isRight)
 
   it "should send `date` query param for push message count" $ do
-    let Free (RunRequest Request{..} _) = getPushMessageCountF date (mkAuth token)
+    let Free (RunRequest Request{..} _) = getPushMessageCountF date
     toList requestQueryString `shouldBe` [("date", Just "20190407")]
 
   it "should send `date` query param for reply message count" $ do
-    let Free (RunRequest Request{..} _) = getReplyMessageCountF date (mkAuth token)
+    let Free (RunRequest Request{..} _) = getReplyMessageCountF date
     toList requestQueryString `shouldBe` [("date", Just "20190407")]
 
   it "should send `date` query param for multicast message count" $ do
-    let Free (RunRequest Request{..} _) = getMulticastMessageCountF date (mkAuth token)
+    let Free (RunRequest Request{..} _) = getMulticastMessageCountF date
     toList requestQueryString `shouldBe` [("date", Just "20190407")]
   where
     date = LineDate $ fromGregorian 2019 4 7

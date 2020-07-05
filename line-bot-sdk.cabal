@@ -31,7 +31,6 @@ library
                      , Line.Bot.Webhook.Events
                      , Line.Bot.Client
                      , Line.Bot.Types
-                     , Line.Bot.Internal.Auth
                      , Line.Bot.Internal.Endpoints
 
   build-depends:       base                 >= 4.7 && < 5
@@ -40,7 +39,7 @@ library
                      , scientific           >= 0.3.6 && < 0.4
                      , text                 >= 1.2.3 && < 1.3
                      , transformers         >= 0.5.5 && < 0.6
-                     , time                 >= 1.8.0 && < 1.9
+                     , time                 >= 1.9.3 && < 1.10
                      , base64-bytestring    >= 1.0.0 && < 1.1
                      , cryptohash-sha256    >= 0.11.101 && < 0.12
                      , http-client          >= 0.5.14 && < 0.7
@@ -71,7 +70,7 @@ executable echo-server
                      , transformers         >= 0.5.5 && < 0.6
                      , wai                  >= 3.2.2 && < 3.3
                      , wai-extra            >= 3.0.25 && < 3.1
-                     , warp                 >= 3.2.26 && < 3.3
+                     , warp                 >= 3.3.12 && < 3.4
 
   default-language:    Haskell2010
 
@@ -92,6 +91,7 @@ test-suite line-bot-sdk-test
                      , hspec-expectations
                      , http-types
                      , http-client
+                     , http-client-tls
                      , aeson
                      , transformers
                      , aeson-qq

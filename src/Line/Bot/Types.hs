@@ -62,14 +62,11 @@ where
 import           Control.Arrow         ((>>>))
 import           Control.DeepSeq
 import           Data.Aeson
-import           Data.Aeson.Types
 import           Data.ByteString       (ByteString)
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.ByteString.Lazy  as LB
 import           Data.Char             (toLower)
 import           Data.List             as L (stripPrefix)
-import           Data.Maybe            (fromJust)
-import           Data.Monoid           ((<>))
 import           Data.String
 import           Data.Text             as T hiding (drop, toLower)
 import           Data.Text.Encoding
@@ -77,12 +74,9 @@ import           Data.Time.Calendar    (Day)
 import           Data.Time.Format
 import           Data.Typeable
 import           GHC.Generics          hiding (to)
-import           Network.HTTP.Media    (MediaType, (//))
+import           Network.HTTP.Media    ((//))
 import           Servant.API
-import           Text.Show
 import           Web.FormUrlEncoded    (ToForm (..))
-
-
 
 newtype ChannelToken = ChannelToken { unChannelToken :: Text }
   deriving (Eq, Show, Generic, NFData)

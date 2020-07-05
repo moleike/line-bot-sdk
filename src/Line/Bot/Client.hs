@@ -60,17 +60,15 @@ module Line.Bot.Client
 where
 
 import           Control.DeepSeq             (NFData)
-import           Control.Monad.IO.Class
 import           Control.Monad.Reader
 import           Control.Monad.Trans.Class   (lift)
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Lazy        as LB
 import           Data.Functor
-import           Data.Maybe
-import           Data.Monoid
 import           Data.Proxy
 import           Data.Time.Calendar          (Day)
-import           Line.Bot.Internal.Auth      (Auth, mkAuth)
+import           Data.Text (Text)
+import GHC.TypeLits (Symbol)
 import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client         (newManager)
@@ -83,6 +81,9 @@ defaultEndpoint = BaseUrl Https "api.line.me" 443 ""
 
 blobEndpoint :: BaseUrl
 blobEndpoint = BaseUrl Https "api-data.line.me" 443 ""
+
+userAgent :: Text
+userAgent = "servant-client"
 
 -- | @Line@ is the monad in which bot requests run. Contains the
 -- OAuth access token for a channel
@@ -110,31 +111,48 @@ withLine' comp k = withLineEnv $ \env -> withClientM comp env k
 withLine :: Line a -> ChannelToken -> (Either ClientError a -> IO b) -> IO b
 withLine comp = withLine' . runReaderT comp
 
-withHost :: MonadReader ClientEnv m => BaseUrl -> m a -> m a
-withHost baseUrl = local (\env -> env { baseUrl = baseUrl })
+withHost :: BaseUrl -> Line a -> Line a
+withHost baseUrl = mapReaderT $ local (\env -> env { baseUrl = baseUrl })
 
-type LineAuth a = Auth -> ClientM a
+type family AddHeaders a :: * where
+  AddHeaders ((sym :: Symbol) :> last)
+    = (sym :: Symbol) :> AddHeaders last
+  AddHeaders (first :> last)
+    = first :> AddHeaders last
+  AddHeaders last
+    =  Header' '[Required, Strict] "Authorization" ChannelToken
+    :> Header' '[Required, Strict] "User-Agent" Text
+    :> last
+   
+type ClientWithHeaders a = ChannelToken -> Text -> ClientM a
 
-type family AddLineAuth a :: * where
-  AddLineAuth (LineAuth a) = Line a
-  AddLineAuth (a -> b) = a -> AddLineAuth b
+type family EmbedLine a :: * where
+  EmbedLine (ClientWithHeaders a) = Line a
+  EmbedLine (a -> b) = a -> EmbedLine b
 
 class HasLine a where
-  addLineAuth :: a -> AddLineAuth a
+  embedLine :: a -> EmbedLine a
 
-instance HasLine (LineAuth a) where
-  addLineAuth comp = ask >>= lift . comp . mkAuth
+instance HasLine (ClientWithHeaders a) where
+  embedLine comp = do
+    token <- ask
+    lift $ comp token userAgent
 
-instance HasLine (a -> LineAuth b) where
-  addLineAuth comp = addLineAuth . comp
+instance HasLine (a -> ClientWithHeaders b) where
+  embedLine comp = embedLine . comp
 
-instance HasLine (a -> b -> LineAuth c) where
-  addLineAuth comp = addLineAuth . comp
+instance HasLine (a -> b -> ClientWithHeaders c) where
+  embedLine comp = embedLine . comp
 
-line :: (HasLine (Client ClientM api), HasClient ClientM api)
+line :: (HasLine (Client ClientM (AddHeaders api)), HasClient ClientM (AddHeaders api))
      => Proxy api
-     -> AddLineAuth (Client ClientM api)
-line = addLineAuth . client
+     -> EmbedLine (Client ClientM (AddHeaders api))
+line = embedLine . clientWithHeaders
+
+clientWithHeaders :: (HasClient ClientM (AddHeaders api))
+                  => Proxy api
+                  -> Client ClientM (AddHeaders api)
+clientWithHeaders (Proxy :: Proxy api) = client (Proxy :: Proxy (AddHeaders api))
 
 unfoldMemberUserIds :: (Maybe String -> Line MemberIds) -> Line [Id User]
 unfoldMemberUserIds k = go Nothing where
@@ -194,14 +212,15 @@ broadcastMessage' = line (Proxy @BroadcastMessage)
 broadcastMessage :: [Message] -> Line NoContent
 broadcastMessage = broadcastMessage' . BroadcastMessageBody
 
-getContent' :: MessageId -> Auth -> ClientM LB.ByteString
-getContent' = client (Proxy @GetContent)
+getContent' :: MessageId -> Line LB.ByteString
+getContent' = line (Proxy @GetContent)
 
 getContent :: MessageId -> Line LB.ByteString
-getContent  a = ask >>= lift . withHost blobEndpoint . getContent' a . mkAuth
+getContent = withHost blobEndpoint . getContent'
 
-getContentS' :: MessageId -> Auth -> ClientM (SourceIO ByteString)
-getContentS' = client (Proxy @GetContentStream)
+
+getContentS' :: MessageId -> Line (SourceIO ByteString)
+getContentS' = line (Proxy @GetContentStream)
 
 -- | This is an streaming version of 'getContent' meant to be used with coroutine
 -- libraries like @pipes@, @conduits@, @streaming@, etc. You need and instance
@@ -212,7 +231,7 @@ getContentS' = client (Proxy @GetContentStream)
 -- > getContentC :: MessageId -> Line (ConduitT () ByteString IO ())
 -- > getContentC = fmap fromSourceIO . getContentS
 getContentS :: MessageId -> Line (SourceIO ByteString)
-getContentS  a = ask >>= lift . withHost blobEndpoint . getContentS' a . mkAuth
+getContentS = withHost blobEndpoint . getContentS'
 
 getPushMessageCount' :: LineDate -> Line MessageCount
 getPushMessageCount' = line (Proxy @GetPushMessageCount)
@@ -265,11 +284,11 @@ getRichMenu' = line (Proxy @GetRichMenu)
 getRichMenu :: RichMenuId -> Line RichMenu
 getRichMenu = fmap richMenu . getRichMenu'
 
-uploadRichMenuImageJpg' :: RichMenuId -> ByteString -> Auth -> ClientM NoContent
-uploadRichMenuImageJpg' = client (Proxy @UploadRichMenuImageJpg)
+uploadRichMenuImageJpg' :: RichMenuId -> ByteString -> Line NoContent
+uploadRichMenuImageJpg' = line (Proxy @UploadRichMenuImageJpg)
 
 uploadRichMenuImageJpg :: RichMenuId -> ByteString -> Line NoContent
-uploadRichMenuImageJpg a b = ask >>= lift . withHost blobEndpoint . uploadRichMenuImageJpg' a b . mkAuth
+uploadRichMenuImageJpg a = withHost blobEndpoint . uploadRichMenuImageJpg' a
 
 deleteRichMenu :: RichMenuId -> Line NoContent
 deleteRichMenu = line (Proxy @DeleteRichMenu)
