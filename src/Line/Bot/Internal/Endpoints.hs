@@ -23,29 +23,29 @@ import           Servant.API
 -- | Combinator for authenticating with the channel access token
 type GetProfile' a =
      "v2":> "bot" :> "profile"
-  :> Capture "userId" (Id User)
+  :> Capture "userId" (Id 'User)
   :> Get '[JSON] a
 
 type GetProfile = GetProfile' Profile
 
 type GetGroupMemberProfile' a =
      "v2":> "bot" :> "group"
-  :> Capture "groupId" (Id Group)
+  :> Capture "groupId" (Id 'Group)
   :> "member"
-  :> Capture "userId" (Id User)
+  :> Capture "userId" (Id 'User)
   :> Get '[JSON] a
 
 type GetGroupMemberProfile = GetGroupMemberProfile' Profile
 
 type LeaveGroup =
      "v2":> "bot" :> "group"
-  :> Capture "groupId" (Id Group)
+  :> Capture "groupId" (Id 'Group)
   :> "leave"
   :> PostNoContent '[JSON] NoContent
 
 type GetGroupMemberUserIds' a =
      "v2":> "bot" :> "group"
-  :> Capture "groupId" (Id Group)
+  :> Capture "groupId" (Id 'Group)
   :> "members"
   :> "ids"
   :> QueryParam "start" String
@@ -55,22 +55,22 @@ type GetGroupMemberUserIds = GetGroupMemberUserIds' MemberIds
 
 type GetRoomMemberProfile' a =
      "v2":> "bot" :> "room"
-  :> Capture "roomId" (Id Room)
+  :> Capture "roomId" (Id 'Room)
   :> "member"
-  :> Capture "userId" (Id User)
+  :> Capture "userId" (Id 'User)
   :> Get '[JSON] a
 
 type GetRoomMemberProfile = GetRoomMemberProfile' Profile
 
 type LeaveRoom =
      "v2":> "bot" :> "room"
-  :> Capture "roomId" (Id Room)
+  :> Capture "roomId" (Id 'Room)
   :> "leave"
   :> PostNoContent '[JSON] NoContent
 
 type GetRoomMemberUserIds' a =
      "v2":> "bot" :> "room"
-  :> Capture "roomId" (Id Room)
+  :> Capture "roomId" (Id 'Room)
   :> "members"
   :> "ids"
   :> QueryParam "start" String
@@ -163,7 +163,7 @@ type GetMessageQuota = GetMessageQuota' MessageQuota
 
 type IssueLinkToken' a =
      "v2":> "bot" :> "user"
-  :> Capture "userId" (Id User)
+  :> Capture "userId" (Id 'User)
   :> "linkToken"
   :> Get '[JSON] a
 

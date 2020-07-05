@@ -61,14 +61,13 @@ where
 
 import           Control.DeepSeq             (NFData)
 import           Control.Monad.Reader
-import           Control.Monad.Trans.Class   (lift)
 import           Data.ByteString             (ByteString)
 import qualified Data.ByteString.Lazy        as LB
 import           Data.Functor
 import           Data.Proxy
 import           Data.Time.Calendar          (Day)
-import           Data.Text (Text)
-import GHC.TypeLits (Symbol)
+import           Data.Text                   (Text)
+import           GHC.TypeLits                (Symbol)
 import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
 import           Network.HTTP.Client         (newManager)
@@ -154,38 +153,38 @@ clientWithHeaders :: (HasClient ClientM (AddHeaders api))
                   -> Client ClientM (AddHeaders api)
 clientWithHeaders (Proxy :: Proxy api) = client (Proxy :: Proxy (AddHeaders api))
 
-unfoldMemberUserIds :: (Maybe String -> Line MemberIds) -> Line [Id User]
+unfoldMemberUserIds :: (Maybe String -> Line MemberIds) -> Line [Id 'User]
 unfoldMemberUserIds k = go Nothing where
   go tok = do
     MemberIds{next, memberIds = a} <- k tok
     as <- maybe (return []) (\_ -> go next) next
     return $ a ++ as
 
-getProfile :: Id User -> Line Profile
+getProfile :: Id 'User -> Line Profile
 getProfile = line (Proxy @GetProfile)
 
-getGroupMemberProfile :: Id Group -> Id User -> Line Profile
+getGroupMemberProfile :: Id 'Group -> Id 'User -> Line Profile
 getGroupMemberProfile = line (Proxy @GetGroupMemberProfile)
 
-leaveGroup :: Id Group -> Line NoContent
+leaveGroup :: Id 'Group -> Line NoContent
 leaveGroup = line (Proxy @LeaveGroup)
 
-getGroupMemberUserIds' :: Id Group -> Maybe String -> Line MemberIds
+getGroupMemberUserIds' :: Id 'Group -> Maybe String -> Line MemberIds
 getGroupMemberUserIds' = line (Proxy @GetGroupMemberUserIds)
 
-getGroupMemberUserIds :: Id Group -> Line [Id User]
+getGroupMemberUserIds :: Id 'Group -> Line [Id 'User]
 getGroupMemberUserIds = unfoldMemberUserIds . getGroupMemberUserIds'
 
-getRoomMemberProfile :: Id Room -> Id User -> Line Profile
+getRoomMemberProfile :: Id 'Room -> Id 'User -> Line Profile
 getRoomMemberProfile = line (Proxy @GetRoomMemberProfile)
 
-leaveRoom :: Id Room -> Line NoContent
+leaveRoom :: Id 'Room -> Line NoContent
 leaveRoom = line (Proxy @LeaveRoom)
 
-getRoomMemberUserIds' :: Id Room -> Maybe String -> Line MemberIds
+getRoomMemberUserIds' :: Id 'Room -> Maybe String -> Line MemberIds
 getRoomMemberUserIds' = line (Proxy @GetRoomMemberUserIds)
 
-getRoomMemberUserIds :: Id Room -> Line [Id User]
+getRoomMemberUserIds :: Id 'Room -> Line [Id 'User]
 getRoomMemberUserIds = unfoldMemberUserIds . getRoomMemberUserIds'
 
 replyMessage' :: ReplyMessageBody -> Line NoContent
@@ -203,7 +202,7 @@ pushMessage a ms = pushMessage' (PushMessageBody a ms)
 multicastMessage' :: MulticastMessageBody -> Line NoContent
 multicastMessage' = line (Proxy @MulticastMessage)
 
-multicastMessage :: [Id User] -> [Message] -> Line NoContent
+multicastMessage :: [Id 'User] -> [Message] -> Line NoContent
 multicastMessage a ms = multicastMessage' (MulticastMessageBody a ms)
 
 broadcastMessage' :: BroadcastMessageBody -> Line NoContent
@@ -217,7 +216,6 @@ getContent' = line (Proxy @GetContent)
 
 getContent :: MessageId -> Line LB.ByteString
 getContent = withHost blobEndpoint . getContent'
-
 
 getContentS' :: MessageId -> Line (SourceIO ByteString)
 getContentS' = line (Proxy @GetContentStream)
@@ -263,7 +261,7 @@ getMessageQuota' = line (Proxy @GetMessageQuota)
 getMessageQuota :: Line Int
 getMessageQuota = fmap totalUsage getMessageQuota'
 
-issueLinkToken :: Id User -> Line LinkToken
+issueLinkToken :: Id 'User -> Line LinkToken
 issueLinkToken = line (Proxy @IssueLinkToken)
 
 issueChannelToken' :: ClientCredentials -> ClientM ShortLivedChannelToken

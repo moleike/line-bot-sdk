@@ -37,26 +37,21 @@ where
 
 import           Control.Arrow         ((>>>))
 import           Data.Aeson
-import           Data.Aeson.Types
 import           Data.Char
 import           Data.Foldable
 import           Data.List             as L (stripPrefix)
-import           Data.Maybe
-import           Data.Scientific
-import           Data.String
 import           Data.Text             as T hiding (drop, toLower)
-import           Data.Time             (LocalTime, UTCTime)
+import           Data.Time             (UTCTime)
 import           Data.Time.Calendar    (Day)
 import           Data.Time.Clock.POSIX
 import           Data.Time.Format
 import           Data.Time.LocalTime
 import           Data.Typeable         (Typeable)
 import           GHC.Generics          (Generic)
-import           Line.Bot.Types        hiding (Message, Text)
-
+import           Line.Bot.Types        hiding (Message)
 
 data Events = Events
-  { destination :: Id User -- ^ User ID of a bot that should receive webhook events
+  { destination :: Id 'User -- ^ 'User ID of a bot that should receive webhook events
   , events      :: [Event] -- ^ List of webhook event objects
   }
   deriving (Show, Generic)
@@ -207,9 +202,9 @@ instance FromJSON Source where
       _       -> fail ("unknown source: " ++ messageType)
 
 instance ToJSON Source where
-  toJSON (Source (UserId a))  = object ["type" .= "user", "userId" .= a]
-  toJSON (Source (GroupId a)) = object ["type" .= "group", "groupId" .= a]
-  toJSON (Source (RoomId a))  = object ["type" .= "room", "roomId" .= a]
+  toJSON (Source (UserId a))  = object ["type" .= String "user", "userId" .= a]
+  toJSON (Source (GroupId a)) = object ["type" .= String "group", "groupId" .= a]
+  toJSON (Source (RoomId a))  = object ["type" .= String "room", "roomId" .= a]
 
 newtype Members = Members { members :: [Source] }
   deriving (Show, Generic)

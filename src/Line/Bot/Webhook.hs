@@ -28,11 +28,9 @@ module Line.Bot.Webhook
   )
 where
 
-import           Control.Monad            (forM_, (>>))
+import           Control.Monad            (forM_)
 import           Control.Monad.IO.Class   (MonadIO, liftIO)
 import qualified Crypto.Hash.SHA256       as SHA256
-import           Data.Aeson
-import           Data.Aeson.Types
 import qualified Data.ByteString          as B
 import qualified Data.ByteString.Base64   as Base64
 import qualified Data.ByteString.Lazy     as BL
@@ -43,7 +41,7 @@ import           Data.Typeable            (Typeable)
 import           Line.Bot.Types           (ChannelSecret (..))
 import           Line.Bot.Webhook.Events  as Events
 import           Network.HTTP.Types       (HeaderName, hContentType)
-import           Network.Wai              (Request, lazyRequestBody,
+import           Network.Wai              (lazyRequestBody,
                                            requestHeaders)
 import           Servant
 import           Servant.API.ContentTypes

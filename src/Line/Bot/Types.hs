@@ -68,7 +68,7 @@ import qualified Data.ByteString.Lazy  as LB
 import           Data.Char             (toLower)
 import           Data.List             as L (stripPrefix)
 import           Data.String
-import           Data.Text             as T hiding (drop, toLower)
+import           Data.Text             as T hiding (count, drop, toLower)
 import           Data.Text.Encoding
 import           Data.Time.Calendar    (Day)
 import           Data.Time.Format
@@ -115,9 +115,9 @@ data ChatType = User | Group | Room
 
 -- | ID of a chat user, group or room
 data Id :: ChatType -> * where
-  UserId  :: Text -> Id User
-  GroupId :: Text -> Id Group
-  RoomId  :: Text -> Id Room
+  UserId  :: Text -> Id 'User
+  GroupId :: Text -> Id 'Group
+  RoomId  :: Text -> Id 'Room
 
 deriving instance Eq (Id a)
 deriving instance Show (Id a)
@@ -136,32 +136,32 @@ instance ToHttpApiData (Id a) where
 instance ToJSON (Id a) where
   toJSON = String . toQueryParam
 
-instance FromHttpApiData (Id User) where
+instance FromHttpApiData (Id 'User) where
   parseUrlPiece = pure . UserId
 
-instance FromHttpApiData (Id Group) where
+instance FromHttpApiData (Id 'Group) where
   parseUrlPiece = pure . GroupId
 
-instance FromHttpApiData (Id Room) where
+instance FromHttpApiData (Id 'Room) where
   parseUrlPiece = pure . RoomId
 
-instance IsString (Id User) where
+instance IsString (Id 'User) where
   fromString s = UserId (fromString s)
 
-instance IsString (Id Group) where
+instance IsString (Id 'Group) where
   fromString s = GroupId (fromString s)
 
-instance IsString (Id Room) where
+instance IsString (Id 'Room) where
   fromString s = RoomId (fromString s)
 
-instance FromJSON (Id User) where
-  parseJSON = withText "Id User" $ return . UserId
+instance FromJSON (Id 'User) where
+  parseJSON = withText "Id 'User" $ return . UserId
 
-instance FromJSON (Id Group) where
-  parseJSON = withText "Id Group" $ return . GroupId
+instance FromJSON (Id 'Group) where
+  parseJSON = withText "Id 'Group" $ return . GroupId
 
-instance FromJSON (Id Room) where
-  parseJSON = withText "Id Room" $ return . RoomId
+instance FromJSON (Id 'Room) where
+  parseJSON = withText "Id 'Room" $ return . RoomId
 
 type MessageId = Text
 
@@ -259,7 +259,7 @@ instance ToJSON PushMessageBody where
     ]
 
 data MulticastMessageBody = MulticastMessageBody
-  { to       :: [Id User]
+  { to       :: [Id 'User]
   , messages :: [Message]
   }
   deriving (Show, Generic, NFData)
@@ -373,7 +373,7 @@ newtype MessageQuota = MessageQuota { totalUsage :: Int }
 instance FromJSON MessageQuota
 
 data MemberIds = MemberIds
-  { memberIds :: [Id User]
+  { memberIds :: [Id 'User]
   , next      :: Maybe String
   } deriving (Eq, Show, Generic, NFData)
 
@@ -453,13 +453,13 @@ instance FromJSON RichMenuResponseList
 
 data RichMenuBulkLinkBody = RichMenuBulkLinkBody
   { richMenuId :: Text
-  , userIds    :: [Id User]
+  , userIds    :: [Id 'User]
   } deriving (Show, Eq, Generic, NFData)
 
 instance ToJSON RichMenuBulkLinkBody
 
 newtype RichMenuBulkUnlinkBody = RichMenuBulkUnlinkBody
-  { userIds :: [Id User] }
+  { userIds :: [Id 'User] }
   deriving (Show, Eq, Generic, NFData)
 
 instance ToJSON RichMenuBulkUnlinkBody
