@@ -66,7 +66,7 @@ import qualified Data.ByteString.Lazy        as LB
 import           Data.Functor
 import           Data.Proxy
 import           Data.Time.Calendar          (Day)
-import           Data.Text                   (Text)
+import           Data.Text                   (Text, pack)
 import           GHC.TypeLits                (Symbol)
 import           Line.Bot.Internal.Endpoints
 import           Line.Bot.Types
@@ -74,6 +74,8 @@ import           Network.HTTP.Client         (newManager)
 import           Network.HTTP.Client.TLS     (tlsManagerSettings)
 import           Servant.API
 import           Servant.Client.Streaming
+import           Paths_line_bot_sdk          (version)
+import           Data.Version                (showVersion)
 
 defaultEndpoint :: BaseUrl
 defaultEndpoint = BaseUrl Https "api.line.me" 443 ""
@@ -82,7 +84,7 @@ blobEndpoint :: BaseUrl
 blobEndpoint = BaseUrl Https "api-data.line.me" 443 ""
 
 userAgent :: Text
-userAgent = "servant-client"
+userAgent = "line-bot-sdk-haskell/" <> pack (showVersion version)
 
 -- | @Line@ is the monad in which bot requests run. Contains the
 -- OAuth access token for a channel
