@@ -225,13 +225,13 @@ instance FromJSON PostbackDateTime where
       , PostbackTimeOfDay <$> o .: "time"
       ]
 
-data Postback = Postback Text PostbackDateTime
+data Postback = Postback Text (Maybe PostbackDateTime)
   deriving (Eq, Show)
 
 instance FromJSON Postback where
   parseJSON = withObject "Postback" $ \o -> do
     postbackData <- o .: "data"
-    params       <- o .: "params"
+    params       <- o .:? "params"
     return $ Postback postbackData params
 
 data BeaconEvent = Enter | Leave | Banner
