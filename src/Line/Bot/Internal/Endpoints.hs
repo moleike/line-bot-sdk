@@ -41,7 +41,7 @@ type LeaveGroup =
      "v2":> "bot" :> "group"
   :> Capture "groupId" (Id 'Group)
   :> "leave"
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type GetGroupMemberUserIds' a =
      "v2":> "bot" :> "group"
@@ -66,7 +66,7 @@ type LeaveRoom =
      "v2":> "bot" :> "room"
   :> Capture "roomId" (Id 'Room)
   :> "leave"
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type GetRoomMemberUserIds' a =
      "v2":> "bot" :> "room"
@@ -82,7 +82,7 @@ type ReplyMessage' a =
      "v2":> "bot" :> "message"
   :> "reply"
   :> ReqBody '[JSON] a
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type ReplyMessage = ReplyMessage' ReplyMessageBody
 
@@ -90,7 +90,7 @@ type PushMessage' a =
      "v2":> "bot" :> "message"
   :> "push"
   :> ReqBody '[JSON] a
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type PushMessage = PushMessage' PushMessageBody
 
@@ -98,7 +98,7 @@ type MulticastMessage' a =
      "v2":> "bot" :> "message"
   :> "multicast"
   :> ReqBody '[JSON] a
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type MulticastMessage = MulticastMessage' MulticastMessageBody
 
@@ -106,7 +106,7 @@ type BroadcastMessage' a =
      "v2":> "bot" :> "message"
   :> "broadcast"
   :> ReqBody '[JSON] a
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type BroadcastMessage = BroadcastMessage' BroadcastMessageBody
 
@@ -188,7 +188,7 @@ type RevokeChannelToken = RevokeChannelToken' ChannelToken
 type CreateRichMenu' a b =
      "v2" :> "bot" :> "richmenu"
   :> ReqBody '[JSON] a
-  :> PostNoContent '[JSON] b
+  :> Post '[JSON] b
 
 type CreateRichMenu = CreateRichMenu' RichMenu RichMenuId
 
@@ -225,6 +225,6 @@ type GetRichMenuList = GetRichMenuList' RichMenuResponseList
 type SetDefaultRichMenu' a =
      "v2":> "bot" :> "user" :> "all" :> "richmenu"
   :> Capture "richMenuId" a
-  :> PostNoContent '[JSON] NoContent
+  :> PostNoContent
 
 type SetDefaultRichMenu = SetDefaultRichMenu' RichMenuId
