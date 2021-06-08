@@ -4,14 +4,14 @@ synopsis:            Haskell SDK for LINE Messaging API
 homepage:            https://github.com/moleike/line-bot-sdk#readme
 bug-reports:         https://github.com/moleike/line-bot-sdk/issues
 license:             BSD3
+x-license:           BSD-3-Clause
 license-file:        LICENSE
 author:              Alexandre Moreno
 maintainer:          Alexandre Moreno <alexmorenocano@gmail.com>
-stability:           experimental
-copyright:           (c) 2018 Alexandre Moreno
+copyright:           (c) Alexandre Moreno, 2019-2021
 category:            Network, Web
 build-type:          Simple
-extra-source-files:  README.md
+extra-doc-files:     README.md
 cabal-version:       >=1.10
 description:
   A Servant library for building LINE chatbots. This package is composed

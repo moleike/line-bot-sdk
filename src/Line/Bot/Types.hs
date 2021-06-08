@@ -14,10 +14,11 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE StandaloneDeriving        #-}
+
 -- |
 -- Module      : Line.Bot.Types
--- Copyright   : (c) Alexandre Moreno, 2019
--- License     : BSD3
+-- Copyright   : (c) Alexandre Moreno, 2019-2021
+-- License     : BSD-3-Clause
 -- Maintainer  : alexmorenocano@gmail.com
 -- Stability   : experimental
 
