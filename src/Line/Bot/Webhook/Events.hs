@@ -24,6 +24,7 @@ module Line.Bot.Webhook.Events
   , ContentProvider(..)
   , EpochMilli(..)
   , Source(..)
+  , MessageSource(..)
   , Members(..)
   , Postback(..)
   , Beacon(..)
@@ -60,10 +61,10 @@ instance FromJSON Events
 
 -- | Events generated on the LINE Platform.
 data Event =
-    EventMessage      { replyToken :: ReplyToken
-                      , message    :: Message
-                      , source     :: Source
-                      , timestamp  :: EpochMilli
+    EventMessage      { replyToken    :: ReplyToken
+                      , message       :: Message
+                      , messageSource :: MessageSource
+                      , timestamp     :: EpochMilli
                       }
   | EventFollow       { replyToken :: ReplyToken
                       , source     :: Source
@@ -117,6 +118,7 @@ instance FromJSON Event where
       , contentsFieldName = undefined
       }
     , constructorTagModifier = drop 5 >>> \(x:xs) -> toLower x : xs
+    , fieldLabelModifier = \s -> if s == "messageSource" then "source" else s
     }
 
 data Message =
@@ -205,6 +207,28 @@ instance ToJSON Source where
   toJSON (Source (UserId a))  = object ["type" .= String "user", "userId" .= a]
   toJSON (Source (GroupId a)) = object ["type" .= String "group", "groupId" .= a]
   toJSON (Source (RoomId a))  = object ["type" .= String "room", "roomId" .= a]
+
+data MessageSource
+  = MessageSourceUser (Id 'User)
+  | MessageSourceGroup (Id 'Group) (Id 'User)
+  | MessageSourceRoom (Id 'Room) (Id 'User)
+
+deriving instance Show MessageSource
+deriving instance Typeable MessageSource
+
+instance FromJSON MessageSource where
+  parseJSON = withObject "MessageSource" $ \o -> do
+    messageType <- o .: "type"
+    case messageType of
+      "user"  -> MessageSourceUser . UserId  <$> o .: "userId"
+      "group" -> MessageSourceGroup <$> (GroupId <$> o .: "groupId") <*> (UserId <$> o .: "userId")
+      "room"  -> MessageSourceRoom <$> (RoomId  <$> o .: "roomId") <*> (UserId <$> o .: "userId")
+      _       -> fail ("unknown message source: " ++ messageType)
+
+instance ToJSON MessageSource where
+  toJSON (MessageSourceUser (UserId a))  = object ["type" .= String "user", "userId" .= a]
+  toJSON (MessageSourceGroup (GroupId a) (UserId b)) = object ["type" .= String "group", "groupId" .= a, "userId" .= b]
+  toJSON (MessageSourceRoom (RoomId a) (UserId b))  = object ["type" .= String "room", "roomId" .= a, "userId" .= b]
 
 newtype Members = Members { members :: [Source] }
   deriving (Show, Generic)
