@@ -1,4 +1,4 @@
-name: Haskell CI
+name: build
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
     - uses: haskell/actions/setup@v1
       with:
         ghc-version: '8.10.3'
-        cabal-version: '3.4'
+        cabal-version: '3.4.0.0'
 
     - name: Cache
       uses: actions/cache@v1
@@ -29,7 +29,6 @@ jobs:
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
-
     - name: Install dependencies
       run: |
         cabal update

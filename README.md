@@ -1,4 +1,5 @@
-# line-bot-sdk [![Build Status](https://travis-ci.org/moleike/line-bot-sdk.svg?branch=master)](https://travis-ci.org/moleike/line-bot-sdk)
+# line-bot-sdk [![Build Actions](https://github.com/moleike/line-bot-sdk/workflows/build/badge.svg)](https://github.com/moleike/line-bot-sdk/actions)
+
 
 Servant library for building LINE chatbots. 
 
