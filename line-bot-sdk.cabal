@@ -1,5 +1,5 @@
 name:                line-bot-sdk
-version:             0.7.0
+version:             0.7.1
 synopsis:            Haskell SDK for LINE Messaging API
 homepage:            https://github.com/moleike/line-bot-sdk#readme
 bug-reports:         https://github.com/moleike/line-bot-sdk/issues
@@ -12,7 +12,7 @@ copyright:           (c) Alexandre Moreno, 2019-2021
 category:            Network, Web
 build-type:          Simple
 extra-doc-files:     README.md
-cabal-version:       >=1.10
+cabal-version:       >=1.18
 description:
   A Servant library for building LINE chatbots. This package is composed
   of the following modules:
