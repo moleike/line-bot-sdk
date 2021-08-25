@@ -12,10 +12,8 @@ executable echo-server
   build-depends:
     line-bot-sdk,
     base,
-    servant,
     servant-server,
     transformers,
-    wai,
     wai-extra,
     warp
 
