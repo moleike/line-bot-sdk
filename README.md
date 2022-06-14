@@ -76,3 +76,10 @@ Please report bugs via the
 
 Thanks to the authors of [servant-github](https://hackage.haskell.org/package/servant-github), for inspiration.
 
+## License
+
+See [LICENSE][license].
+
+Copyright © 2019–present Alexandre Moreno
+
+[license]: https://github.com/moleike/line-bot-sdk/blob/master/LICENSE
