@@ -109,10 +109,10 @@ data Event =
                       , timestamp  :: EpochMilli
                       , things     :: Things
                       }
-  | unsend            { source     :: Source
+  | UnSend            { source     :: Source
                       , timestamp  :: EpochMilli
                       }
-  | videoPlayComplete { replyToken :: ReplyToken
+  | VideoPlayComplete { replyToken :: ReplyToken
                       , source     :: Source
                       , timestamp  :: EpochMilli
                       }
