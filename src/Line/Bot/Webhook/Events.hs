@@ -109,6 +109,13 @@ data Event =
                       , timestamp  :: EpochMilli
                       , things     :: Things
                       }
+  | unsend            { source     :: Source
+                      , timestamp  :: EpochMilli
+                      }
+  | videoPlayComplete { replyToken :: ReplyToken
+                      , source     :: Source
+                      , timestamp  :: EpochMilli
+                      }
   deriving (Show, Generic)
 
 instance FromJSON Event where
