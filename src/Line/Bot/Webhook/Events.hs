@@ -33,6 +33,7 @@ module Line.Bot.Webhook.Events
   , ThingsEvent(..)
   , AccountLink(..)
   , AccountLinkResult(..)
+  , TrackingId(..)
   )
 where
 
@@ -109,12 +110,13 @@ data Event =
                       , timestamp  :: EpochMilli
                       , things     :: Things
                       }
-  | UnSend            { source    :: Source
+  | EventUnSend       { source    :: Source
                       , timestamp :: EpochMilli
                       }
-  | VideoPlayComplete { replyToken :: ReplyToken
+  | EventVideoPlayComplete { replyToken :: ReplyToken
                       , source     :: Source
                       , timestamp  :: EpochMilli
+                      , trackingId :: TrackingId
                       }
   deriving (Show, Generic)
 
@@ -325,3 +327,13 @@ instance FromJSON Things where
     deviceId  <- o .: "deviceId"
     eventType <- o .: "type"
     return Things{..}
+
+data TrackingId = TrackingId
+   { trackingId      :: Text
+   }
+   deriving (Eq, Show, Generic)
+
+instance FromJSON TrackingId where
+  parseJSON = withObject "videoPlayComplete" $ \o -> do
+    trackingId      <- o .:  "trackingId"
+    return TrackingId{..}
