@@ -114,9 +114,9 @@ data Event =
                       , timestamp :: EpochMilli
                       }
   | EventVideoPlayComplete { replyToken :: ReplyToken
-                      , source     :: Source
-                      , timestamp  :: EpochMilli
-                      , trackingId :: TrackingId
+                      , source          :: Source
+                      , timestamp       :: EpochMilli
+                      , trackingId      :: TrackingId
                       }
   deriving (Show, Generic)
 
