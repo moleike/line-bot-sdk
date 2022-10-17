@@ -116,7 +116,7 @@ data Event =
   | EventVideoPlayComplete { replyToken :: ReplyToken
                       , source          :: Source
                       , timestamp       :: EpochMilli
-                      , trackingId      :: TrackingId
+                      , videoPlayComplete      :: TrackingId
                       }
   deriving (Show, Generic)
 
