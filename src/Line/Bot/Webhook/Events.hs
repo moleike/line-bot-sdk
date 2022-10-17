@@ -113,10 +113,10 @@ data Event =
   | EventUnSend       { source    :: Source
                       , timestamp :: EpochMilli
                       }
-  | EventVideoPlayComplete { replyToken :: ReplyToken
-                      , source          :: Source
-                      , timestamp       :: EpochMilli
-                      , videoPlayComplete      :: TrackingId
+  | EventVideoPlayComplete { replyToken   :: ReplyToken
+                      , source            :: Source
+                      , timestamp         :: EpochMilli
+                      , videoPlayComplete :: TrackingId
                       }
   deriving (Show, Generic)
 
