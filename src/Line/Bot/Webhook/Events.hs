@@ -328,12 +328,12 @@ instance FromJSON Things where
     eventType <- o .: "type"
     return Things{..}
 
-data TrackingId = TrackingId
+newtype TrackingId = TrackingId
    { trackingId      :: Text
    }
    deriving (Eq, Show, Generic)
 
 instance FromJSON TrackingId where
-  parseJSON = withObject "videoPlayComplete" $ \o -> do
+  parseJSON = withObject "TrackingId" $ \o -> do
     trackingId      <- o .:  "trackingId"
     return TrackingId{..}
