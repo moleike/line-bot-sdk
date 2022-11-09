@@ -21,7 +21,6 @@ import qualified Data.ByteString.Lazy as LB (ByteString)
 import           Line.Bot.Types
 import           Servant.API
 
--- | Combinator for authenticating with the channel access token
 type GetProfile' a =
      "v2":> "bot" :> "profile"
   :> Capture "userId" (Id 'User)
